@@ -13,6 +13,11 @@ RUN dotnet publish "AssignmentSystem.Api.csproj" -c Release -o /app/publish
 FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS final
 WORKDIR /app
 COPY --from=build /app/publish .
+
+# Disable FileSystemWatcher reloadOnChange to prevent Linux container inotify instance limits
+ENV DOTNET_HOSTBUILDER__RELOADCONFIGONCHANGE=false
+ENV DOTNET_USE_POLLING_FILE_WATCHER=false
+
 ENV ASPNETCORE_URLS=http://+:80
 EXPOSE 80
 ENTRYPOINT ["dotnet", "AssignmentSystem.Api.dll"]
