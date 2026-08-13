@@ -64,13 +64,32 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // 2. Database Connection (PostgreSQL required)
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-if (string.IsNullOrWhiteSpace(connectionString))
+var rawConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(rawConnectionString))
 {
     throw new InvalidOperationException(
         "PostgreSQL connection string 'DefaultConnection' is missing from configuration. A valid PostgreSQL connection is strictly required to start the API."
     );
 }
+
+string ConvertPostgresUrl(string url)
+{
+    if (url.StartsWith("postgres://") || url.StartsWith("postgresql://"))
+    {
+        var uri = new Uri(url);
+        var userInfo = uri.UserInfo.Split(':');
+        var user = userInfo.Length > 0 ? Uri.UnescapeDataString(userInfo[0]) : "";
+        var pass = userInfo.Length > 1 ? Uri.UnescapeDataString(userInfo[1]) : "";
+        var host = uri.Host;
+        var port = uri.Port > 0 ? uri.Port : 5432;
+        var db = uri.AbsolutePath.TrimStart('/');
+
+        return $"Host={host};Port={port};Database={db};Username={user};Password={pass};SSL Mode=Prefer;Trust Server Certificate=true;";
+    }
+    return url;
+}
+
+var connectionString = ConvertPostgresUrl(rawConnectionString);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
 {
@@ -79,7 +98,10 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 });
 
 // 3. JWT Authentication Configuration
-var jwtSecret = builder.Configuration["Jwt:SecretKey"] ?? "SuperSecretJwtKeyForAssignmentSystemSuperSecure123456!";
+var jwtSecret = builder.Configuration["Jwt:SecretKey"] 
+             ?? builder.Configuration["Jwt:Key"] 
+             ?? builder.Configuration["Jwt_Key"] 
+             ?? "SuperSecretJwtKeyForAssignmentSystemSuperSecure123456!";
 var jwtIssuer = builder.Configuration["Jwt:Issuer"] ?? "AssignmentSystemApi";
 var jwtAudience = builder.Configuration["Jwt:Audience"] ?? "AssignmentSystemClients";
 

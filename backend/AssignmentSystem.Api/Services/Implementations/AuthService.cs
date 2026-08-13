@@ -73,7 +73,10 @@ public class AuthService : IAuthService
 
     private string GenerateJwtToken(Entities.User user)
     {
-        var secret = _configuration["Jwt:SecretKey"] ?? "DefaultSuperSecretKeyForAssignmentSystem123456!";
+        var secret = _configuration["Jwt:SecretKey"] 
+                  ?? _configuration["Jwt:Key"] 
+                  ?? _configuration["Jwt_Key"] 
+                  ?? "SuperSecretJwtKeyForAssignmentSystemSuperSecure123456!";
         var issuer = _configuration["Jwt:Issuer"] ?? "AssignmentSystemApi";
         var audience = _configuration["Jwt:Audience"] ?? "AssignmentSystemClients";
 
