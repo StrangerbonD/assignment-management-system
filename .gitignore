@@ -1,0 +1,30 @@
+# Node.js / Next.js
+frontend/node_modules/
+frontend/.next/
+frontend/out/
+frontend/.env
+frontend/.env.local
+frontend/.env.development.local
+frontend/.env.test.local
+frontend/.env.production.local
+
+# .NET / C# Build Outputs
+backend/**/bin/
+backend/**/obj/
+backend/**/.vs/
+backend/**/appsettings.Development.json
+backend/**/appsettings.Local.json
+
+# IDE & OS Files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+*.user
+*.userosscache
+*.sln.docstates
+
+# Temporary Logs & Antigravity Brain Artifacts
+*.log
+scratch/
+.tempmediaStorage/
