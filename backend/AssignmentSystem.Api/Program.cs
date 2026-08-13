@@ -144,6 +144,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapGet("/", () => Results.Ok(new { status = "Online", message = "Assignment System API is running successfully." }));
 
 // 7. Auto-Migration & Database Seeding on Startup
 using (var scope = app.Services.CreateScope())
