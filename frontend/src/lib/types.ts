@@ -98,6 +98,7 @@ export interface Submission {
   maxMarks: number;
   deadline: string;
   studentId: number;
+  studentRegId?: string | null;
   studentName: string;
   studentEmail: string;
   answerText: string;

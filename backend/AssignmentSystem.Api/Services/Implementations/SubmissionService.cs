@@ -276,6 +276,7 @@ public class SubmissionService : ISubmissionService
             MaxMarks: s.Assignment?.MaxMarks ?? 0,
             Deadline: s.Assignment?.Deadline ?? DateTime.MinValue,
             StudentId: s.StudentId,
+            StudentRegId: s.Student?.StudentId,
             StudentName: s.Student?.FullName ?? string.Empty,
             StudentEmail: s.Student?.Email ?? string.Empty,
             AnswerText: s.AnswerText,

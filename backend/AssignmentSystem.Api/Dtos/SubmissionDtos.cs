@@ -26,6 +26,7 @@ public record SubmissionDto(
     int MaxMarks,
     DateTime Deadline,
     int StudentId,
+    string? StudentRegId,
     string StudentName,
     string StudentEmail,
     string AnswerText,

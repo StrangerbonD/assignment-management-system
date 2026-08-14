@@ -10,6 +10,7 @@ import { AssignmentCard } from '../../../components/AssignmentCard';
 import { StatusBadge } from '../../../components/StatusBadge';
 import { GradeSubmissionModal } from '../../../components/GradeSubmissionModal';
 import { CourseMarksheetTable } from '../../../components/CourseMarksheetTable';
+import { Modal } from '../../../components/Modal';
 
 export default function TeacherDashboard() {
   const { user } = useAuth();
@@ -25,6 +26,7 @@ export default function TeacherDashboard() {
 
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isGradeModalOpen, setIsGradeModalOpen] = useState(false);
+  const [viewingAnswerSubmission, setViewingAnswerSubmission] = useState<Submission | null>(null);
   const [activeTab, setActiveTab] = useState<'courses' | 'assignments' | 'submissions' | 'enrollments'>('courses');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -384,6 +386,7 @@ export default function TeacherDashboard() {
                       <th>Student</th>
                       <th>Assignment Title</th>
                       <th>Submitted At</th>
+                      <th>Answer & Attachment</th>
                       <th>Attempts Used</th>
                       <th>Status</th>
                       <th>Marks</th>
@@ -395,11 +398,22 @@ export default function TeacherDashboard() {
                       filteredSubmissions.map((s) => (
                         <tr key={s.id}>
                           <td style={{ fontWeight: 600 }}>
-                            {s.studentName}
+                            {s.studentRegId && <div style={{ fontSize: '0.85rem', fontWeight: 800, color: '#006633' }}>{s.studentRegId}</div>}
+                            <div style={{ fontSize: '0.95rem', fontWeight: 600 }}>{s.studentName}</div>
                             <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{s.studentEmail}</div>
                           </td>
                           <td>{s.assignmentTitle}</td>
                           <td>{new Date(s.submittedAt).toLocaleString()}</td>
+                          <td>
+                            <button
+                              type="button"
+                              onClick={() => setViewingAnswerSubmission(s)}
+                              className="btn btn-secondary btn-sm"
+                              style={{ fontSize: '0.8rem', padding: '0.35rem 0.75rem', fontWeight: 600 }}
+                            >
+                              View Answer
+                            </button>
+                          </td>
                           <td>
                             <span style={{ fontWeight: 600 }}>{s.attemptCount} / {s.maxSubmissionAttempts}</span>
                           </td>
@@ -504,6 +518,85 @@ export default function TeacherDashboard() {
             fetchData();
           }}
         />
+
+        {/* View Answer Modal */}
+        {viewingAnswerSubmission && (
+          <Modal
+            title={`Submitted Answer Solution — ${viewingAnswerSubmission.studentRegId ? viewingAnswerSubmission.studentRegId + ' • ' : ''}${viewingAnswerSubmission.studentName}`}
+            isOpen={!!viewingAnswerSubmission}
+            onClose={() => setViewingAnswerSubmission(null)}
+          >
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.75rem', padding: '0.8rem 1rem', background: '#f8fafc', borderRadius: '6px', border: '1px solid #e2e8f0' }}>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Student ID</div>
+                  <div style={{ fontWeight: 800, color: '#006633', fontSize: '1rem' }}>{viewingAnswerSubmission.studentRegId || 'N/A'}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Student Name</div>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>{viewingAnswerSubmission.studentName}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Submitted At</div>
+                  <div style={{ fontSize: '0.85rem' }}>{new Date(viewingAnswerSubmission.submittedAt).toLocaleString()}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>Attempts</div>
+                  <div style={{ fontWeight: 700, fontSize: '0.85rem' }}>{viewingAnswerSubmission.attemptCount} / {viewingAnswerSubmission.maxSubmissionAttempts}</div>
+                </div>
+              </div>
+
+              <div>
+                <label style={{ display: 'block', fontWeight: 700, marginBottom: '0.5rem', fontSize: '0.9rem', color: '#006633' }}>
+                  Submitted Answer Text:
+                </label>
+                <div style={{ whiteSpace: 'pre-wrap', background: '#ffffff', padding: '1rem', borderRadius: '6px', border: '1px solid #cbd5e1', fontSize: '0.95rem', lineHeight: 1.6, maxHeight: '250px', overflowY: 'auto' }}>
+                  {viewingAnswerSubmission.answerText || '(No written text submitted)'}
+                </div>
+              </div>
+
+              {viewingAnswerSubmission.fileUrl && (
+                <div>
+                  <label style={{ display: 'block', fontWeight: 700, marginBottom: '0.5rem', fontSize: '0.9rem', color: '#006633' }}>
+                    Attached Submitted File:
+                  </label>
+                  <div style={{ padding: '1rem', background: '#e6f4ed', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
+                    {viewingAnswerSubmission.fileUrl.match(/\.(jpeg|jpg|gif|png|webp)($|\?)/i) ? (
+                      <div>
+                        <div style={{ marginBottom: '0.75rem' }}>
+                          <img src={viewingAnswerSubmission.fileUrl} alt="Submission Attachment" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                        </div>
+                        <a href={viewingAnswerSubmission.fileUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm">
+                          Open Original Image File
+                        </a>
+                      </div>
+                    ) : viewingAnswerSubmission.fileUrl.match(/\.pdf($|\?)/i) ? (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#166534' }}>📄 PDF Document Attachment</span>
+                        <a href={viewingAnswerSubmission.fileUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm">
+                          View PDF Document
+                        </a>
+                      </div>
+                    ) : (
+                      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
+                        <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#166534' }}>📎 File Attachment</span>
+                        <a href={viewingAnswerSubmission.fileUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm">
+                          Open File Attachment
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '0.5rem' }}>
+                <button type="button" onClick={() => setViewingAnswerSubmission(null)} className="btn btn-secondary">
+                  Close Window
+                </button>
+              </div>
+            </div>
+          </Modal>
+        )}
       </div>
     </RoleGuard>
   );
