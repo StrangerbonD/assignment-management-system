@@ -69,3 +69,16 @@ npm run dev
 | **Admin** | `admin@cse.gstu.edu.bd` | `Admin123!` |
 | **Teacher** | `teacher@cse.gstu.edu.bd` | `Teacher123!` |
 | **Student** | `student@cse.gstu.edu.bd` | `Student123!` |
+
+---
+
+## ⚠️ Assumptions & Architectural Trade-offs
+
+### 💾 Base64 Data URL File Storage Strategy
+- **Context & Rationale**: Free-tier cloud container hosting platforms (such as Render) operate on an **ephemeral filesystem**, where local container disk storage (`/uploads/`) is wiped upon container redeployment, restart, or scaling.
+- **Architectural Choice**: To guarantee 100% data persistence without requiring external paid cloud object storage subscriptions (e.g., AWS S3, Google Cloud Storage), uploaded question attachments and student submission files are encoded into **Base64 Data URLs** (`data:image/png;base64,...` / `data:application/pdf;base64,...`) and stored directly within PostgreSQL database string columns.
+- **Known Limitations & Mitigations**:
+  - Base64 encoding increases binary file payload size by approximately ~33%.
+  - Storing large binary payloads directly in relational database rows can increase database table size and impact query payload sizes.
+  - **Mitigation**: To prevent database bloat, a strict **5MB file size limit** is programmatically enforced in `FileUploadController.cs`.
+  - **Production Recommendation**: For production enterprise deployments, storing binary assets in dedicated Object Storage (AWS S3) while storing public CDN URLs in the relational database remains the industry best practice. Base64 DB storage was chosen as a deliberate, practical, self-contained trade-off for zero-dependency project execution.

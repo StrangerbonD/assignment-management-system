@@ -32,10 +32,10 @@ public class FileUploadController : ControllerBase
             return BadRequest(new { message = "Invalid file type. Only PDF documents and Image files (.jpg, .png, .webp, .pdf) are allowed." });
         }
 
-        // Limit file size to 10MB
-        if (file.Length > 10 * 1024 * 1024)
+        // Limit file size strictly to 5MB to prevent DB bloat in Base64 Data URL storage
+        if (file.Length > 5 * 1024 * 1024)
         {
-            return BadRequest(new { message = "File size exceeds maximum limit of 10MB." });
+            return BadRequest(new { message = "File size exceeds maximum allowed limit of 5MB." });
         }
 
         using var ms = new MemoryStream();
