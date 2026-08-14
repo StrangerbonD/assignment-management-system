@@ -10,14 +10,12 @@ using AssignmentSystem.Api.Services.Interfaces;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Host.ConfigureAppConfiguration((hostingContext, config) =>
-{
-    config.Sources.Clear();
-    var env = hostingContext.HostingEnvironment;
-    config.AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
-          .AddJsonFile($"appsettings.{env.EnvironmentName}.json", optional: true, reloadOnChange: false)
-          .AddEnvironmentVariables();
-});
+var envName = builder.Environment.EnvironmentName;
+builder.Configuration.Sources.Clear();
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional: true, reloadOnChange: false)
+    .AddJsonFile($"appsettings.{envName}.json", optional: true, reloadOnChange: false)
+    .AddEnvironmentVariables();
 
 // 1. Add Services to DI Container
 builder.Services.AddControllers()
