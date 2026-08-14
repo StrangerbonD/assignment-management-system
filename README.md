@@ -8,11 +8,9 @@ The application is architected with a **Next.js 14 (TypeScript)** Single Page Ap
 
 ---
 
-## Live Deployment Links
+## Source Code Repository
 
-- **Frontend Application**: `https://assignment-management-system-lfn04j41e-bondhon.vercel.app`
-- **Backend API & Swagger Documentation**: `https://assignment-system-api-l6b5.onrender.com/swagger`
-- **Source Code Repository**: `https://github.com/StrangerbonD/assignment-management-system`
+- **GitHub Repository**: `https://github.com/StrangerbonD/assignment-management-system`
 
 ---
 
@@ -75,8 +73,7 @@ assignment-management-system/
 │   │   ├── Middleware/               # Global Exception Handling Middleware
 │   │   ├── Services/                 # Business Logic Services and Interfaces
 │   │   ├── database_schema.sql       # Standalone PostgreSQL SQL Initialization Script
-│   │   ├── Program.cs                # Application Entrypoint and Pipeline Configuration
-│   │   └── Dockerfile                # Multi-stage Containerization File
+│   │   └── Program.cs                # Application Entrypoint and Pipeline Configuration
 │   └── Tests/                        # Unit Test Project
 │       ├── Authorization/            # Role Authorization Tests
 │       ├── BusinessRules/            # Marks, Deadline, Attempt Limit, and Policy Tests
@@ -125,7 +122,7 @@ The API dynamically reads database connection parameters from environment variab
 ### Prerequisites
 - .NET 9.0 SDK
 - Node.js (v18.0.0 or higher) and npm
-- PostgreSQL Server running on `localhost:5432` (or Docker PostgreSQL container)
+- PostgreSQL Server running on `localhost:5432`
 
 ### Step 1: Database Setup
 Create a local PostgreSQL database named `assignment_db`. You can either:
@@ -160,14 +157,17 @@ cd backend/Tests
 dotnet test
 ```
 
-### Test Suite Summary (10/10 Tests Passing)
-1. `MarksValidationTests`: Verifies that awarded marks cannot exceed `MaxMarks` or be negative.
-2. `DeadlineEnforcementTests`: Verifies student submission locks post-deadline.
-3. `SubmissionAttemptLimitTests`: Validates submission attempt capping.
-4. `LowerSemesterRetakePolicyTests`: Verifies that retake applications are restricted to lower semester courses.
-5. `OneCourseOneTeacherPolicyTests`: Enforces that assigning a new teacher replaces previous allocations for a course.
-6. `RoleAuthorizationTests`: Verifies role-based access restrictions.
-7. `StudentClassAssignmentTests`: Validates automatic enrollment purging upon student semester transfer.
+### Test Suite Summary (18/18 Tests Passing)
+1. `MarksValidationTests` (3 tests): Verifies that awarded marks cannot exceed `MaxMarks`, allows valid marks, and rejects negative marks ($0 \le \text{Marks} \le \text{MaxMarks}$).
+2. `DeadlineEnforcementTests` (2 tests): Verifies student submission create/update locks post-deadline.
+3. `SubmissionAttemptLimitTests` (1 test): Validates submission attempt capping when max attempts are reached.
+4. `LowerSemesterRetakePolicyTests` (2 tests): Verifies that retake applications are allowed for lower semester courses and denied for upper/same semester courses.
+5. `OneCourseOneTeacherPolicyTests` (1 test): Enforces that assigning a new teacher replaces previous allocations for a course.
+6. `StudentClassAssignmentTests` (1 test): Validates automatic enrollment purging upon student semester transfer.
+7. `FileUploadLimitTests` (2 tests): Enforces 5MB file upload limit and permits valid uploads.
+8. `RoleAuthorizationTests` (2 tests): Validates draft assignment access restrictions.
+9. `StudentClassAuthorizationTests` (2 tests): Enforces cross-class access blocking.
+10. `TeacherSubjectAuthorizationTests` (2 tests): Blocks unassigned teachers from evaluating submissions.
 
 ---
 
@@ -202,12 +202,12 @@ The system seeds demo accounts for testing all three user roles. All seeded acco
 ### Base64 Data URL File Storage Strategy
 
 #### Context and Rationale
-Cloud container hosting platforms operating under free-tier infrastructure (such as Render) utilize an **ephemeral container filesystem**. Any files written directly to local disk paths (`/uploads/`) are erased whenever the container restarts, scales, or redeploys.
+Stateless hosting containers utilize an **ephemeral container filesystem**, where local disk uploads are erased upon container restarts.
 
 #### Architectural Decision
-To ensure data persistence without introducing paid external cloud object storage dependencies (such as AWS S3 or Google Cloud Storage), uploaded student ID cards, question papers, and submission attachments are encoded into **Base64 Data URLs** (`data:image/png;base64,...` / `data:application/pdf;base64,...`) and stored directly inside PostgreSQL database text columns.
+To ensure data persistence without requiring external paid cloud object storage dependencies (such as AWS S3), uploaded student ID cards, question papers, and submission attachments are encoded into **Base64 Data URLs** (`data:image/png;base64,...` / `data:application/pdf;base64,...`) and stored directly inside PostgreSQL database text columns.
 
 #### Trade-offs and Mitigations
-- **Trade-off**: Base64 encoding increases raw binary payload sizes by approximately 33%. Storing binary strings directly inside database rows increases database size and query payload volume.
+- **Trade-off**: Base64 encoding increases raw binary payload sizes by approximately 33%. Storing binary strings directly inside database rows increases database size.
 - **Mitigation**: A strict **5MB file size limit** is programmatically enforced in `FileUploadController.cs` to prevent database bloat.
-- **Production Recommendation**: In enterprise production environments, storing binary files in dedicated Object Storage (AWS S3) while maintaining reference URLs in the database remains the standard architecture. Base64 database persistence was selected as a practical, self-contained trade-off for zero-dependency deployment and local setup.
+- **Production Recommendation**: In enterprise production environments, storing binary files in dedicated Object Storage (AWS S3) while maintaining reference URLs in the database remains the standard architecture. Base64 database persistence was selected as a practical, self-contained trade-off for zero-dependency local setup.
