@@ -1014,11 +1014,11 @@ export default function AdminDashboard() {
               <input
                 type="password"
                 className="form-input"
-                placeholder="Enter new secure password (min 6 chars)"
+                placeholder="Enter new password (min 4 chars)"
                 value={newPasswordInput}
                 onChange={(e) => setNewPasswordInput(e.target.value)}
                 required
-                minLength={6}
+                minLength={4}
               />
             </div>
             <button type="submit" className="btn btn-primary" style={{ width: '100%', marginTop: '0.75rem' }}>
@@ -1105,7 +1105,7 @@ export default function AdminDashboard() {
             </div>
             <div className="form-group">
               <label className="form-label">Password</label>
-              <input type="password" className="form-input" value={userForm.password} onChange={(e) => setUserForm({ ...userForm, password: e.target.value })} required minLength={6} />
+              <input type="password" className="form-input" value={userForm.password} onChange={(e) => setUserForm({ ...userForm, password: e.target.value })} required minLength={4} />
             </div>
             {userForm.role === 'Student' && (
               <div className="form-group">

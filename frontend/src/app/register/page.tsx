@@ -180,11 +180,11 @@ export default function RegisterPage() {
                   name="password"
                   type="password"
                   className="form-input"
-                  placeholder="Minimum 6 characters"
+                  placeholder="Enter password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
-                  minLength={6}
+                  minLength={4}
                 />
               </div>
 
