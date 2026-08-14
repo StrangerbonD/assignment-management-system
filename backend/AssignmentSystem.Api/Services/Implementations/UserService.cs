@@ -183,8 +183,20 @@ public class UserService : IUserService
 
         if (dto.Role == UserRole.Student && dto.ClassId.HasValue)
         {
-            user.ClassId = dto.ClassId.Value;
-            user.Class = await _context.Classes.FirstOrDefaultAsync(c => c.Id == dto.ClassId.Value);
+            var newClassId = dto.ClassId.Value;
+            user.ClassId = newClassId;
+            user.Class = await _context.Classes.FirstOrDefaultAsync(c => c.Id == newClassId);
+
+            // Clean up obsolete retake enrollments for equal or higher classes
+            var invalidEnrollments = await _context.StudentSubjectEnrollments
+                .Include(se => se.Subject)
+                .Where(se => se.StudentId == id && se.Subject.ClassId >= newClassId)
+                .ToListAsync();
+
+            if (invalidEnrollments.Any())
+            {
+                _context.StudentSubjectEnrollments.RemoveRange(invalidEnrollments);
+            }
         }
         else
         {

@@ -37,11 +37,12 @@ public class AssignmentService : IAssignmentService
             }
 
             var approvedRetakeSubjectIds = await _context.StudentSubjectEnrollments
-                .Where(e => e.StudentId == currentUser.Id && e.IsApproved)
+                .Include(e => e.Subject)
+                .Where(e => e.StudentId == currentUser.Id && e.IsApproved && e.Subject.ClassId < currentUser.ClassId.Value)
                 .Select(e => e.SubjectId)
                 .ToListAsync();
 
-            // Student Rule: Only assignments for student's primary ClassId OR approved retake subjects & Status = Published
+            // Student Rule: Only assignments for student's primary ClassId OR approved retake subjects from lower semesters & Status = Published
             query = query.Where(a => (a.Subject.ClassId == currentUser.ClassId.Value || approvedRetakeSubjectIds.Contains(a.SubjectId)) && a.Status == AssignmentStatus.Published);
         }
         else if (currentUser.Role == UserRole.Teacher)
