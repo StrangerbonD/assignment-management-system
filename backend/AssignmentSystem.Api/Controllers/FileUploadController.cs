@@ -38,25 +38,24 @@ public class FileUploadController : ControllerBase
             return BadRequest(new { message = "File size exceeds maximum limit of 10MB." });
         }
 
-        var webRoot = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
-        var uploadsFolder = Path.Combine(webRoot, "uploads");
-        if (!Directory.Exists(uploadsFolder))
+        using var ms = new MemoryStream();
+        await file.CopyToAsync(ms);
+        var fileBytes = ms.ToArray();
+        var base64String = Convert.ToBase64String(fileBytes);
+
+        string mimeType = extension switch
         {
-            Directory.CreateDirectory(uploadsFolder);
-        }
+            ".pdf" => "application/pdf",
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".webp" => "image/webp",
+            _ => "application/octet-stream"
+        };
 
-        var uniqueFileName = $"{Guid.NewGuid()}_{Path.GetFileName(file.FileName)}";
-        var filePath = Path.Combine(uploadsFolder, uniqueFileName);
+        var dataUrl = $"data:{mimeType};base64,{base64String}";
 
-        using (var stream = new FileStream(filePath, FileMode.Create))
-        {
-            await file.CopyToAsync(stream);
-        }
-
-        var baseUrl = $"{Request.Scheme}://{Request.Host}";
-        var fileUrl = $"{baseUrl}/uploads/{uniqueFileName}";
-
-        return Ok(new { url = fileUrl, fileName = file.FileName, fileType = extension });
+        return Ok(new { url = dataUrl, fileName = file.FileName, fileType = extension });
     }
 
     [HttpGet("/uploads/{fileName}")]

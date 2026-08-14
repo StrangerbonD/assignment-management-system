@@ -120,12 +120,12 @@ export default function AssignmentDetailPage() {
 
   const isImageFile = (url?: string | null) => {
     if (!url) return false;
-    return /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
+    return url.startsWith('data:image/') || /\.(jpg|jpeg|png|gif|webp)(\?.*)?$/i.test(url);
   };
 
   const isPdfFile = (url?: string | null) => {
     if (!url) return false;
-    return /\.pdf(\?.*)?$/i.test(url);
+    return url.startsWith('data:application/pdf') || /\.pdf(\?.*)?$/i.test(url);
   };
 
   if (loading) {
