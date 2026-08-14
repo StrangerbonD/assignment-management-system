@@ -99,7 +99,7 @@ export default function StudentDashboard() {
   // Enrolled subjects: Only subjects in student's primary class OR approved retake courses
   const enrolledSubjects = allSubjects.filter((s) => {
     const isPrimaryClassSubject = user?.classId ? s.classId === user.classId : true;
-    const isApprovedRetake = approvedSubjectIds.has(s.id);
+    const isApprovedRetake = user?.classId ? (s.classId < user.classId && approvedSubjectIds.has(s.id)) : approvedSubjectIds.has(s.id);
     return isPrimaryClassSubject || isApprovedRetake;
   });
 

@@ -148,6 +148,18 @@ public static class DbInitializer
         await context.Database.ExecuteSqlRawAsync("UPDATE \"Users\" SET \"StudentId\" = '20CSE036', \"FullName\" = 'Iftekhar Siddiq Tanvir', \"IsApproved\" = TRUE WHERE LOWER(\"Email\") = 'student2@cse.gstu.edu.bd';");
         await context.Database.ExecuteSqlRawAsync("UPDATE \"Users\" SET \"StudentId\" = '20CSE011', \"FullName\" = 'Masum Reza', \"IsApproved\" = TRUE WHERE LOWER(\"Email\") = 'student3@cse.gstu.edu.bd';");
 
+        // Purge obsolete enrollments from previous primary classes when student class updates
+        await context.Database.ExecuteSqlRawAsync(@"
+            DELETE FROM ""StudentSubjectEnrollments""
+            WHERE ""Id"" IN (
+                SELECT se.""Id""
+                FROM ""StudentSubjectEnrollments"" se
+                INNER JOIN ""Users"" u ON se.""StudentId"" = u.""Id""
+                INNER JOIN ""Subjects"" s ON se.""SubjectId"" = s.""Id""
+                WHERE s.""ClassId"" >= u.""ClassId"" OR (u.""ClassId"" IS NOT NULL AND s.""ClassId"" < u.""ClassId"" AND se.""ApprovedAt"" IS NULL)
+            );
+        ");
+
         var mainTeacher = await context.Users.FirstAsync(u => u.Email == "teacher@cse.gstu.edu.bd");
         var mainStudent = await context.Users.FirstAsync(u => u.Email == "student@cse.gstu.edu.bd");
 

@@ -184,19 +184,21 @@ public class UserService : IUserService
         if (dto.Role == UserRole.Student && dto.ClassId.HasValue)
         {
             var newClassId = dto.ClassId.Value;
+            if (user.ClassId != newClassId)
+            {
+                // Purge prior enrollments from previous primary class when student moves to a new class
+                var priorEnrollments = await _context.StudentSubjectEnrollments
+                    .Where(se => se.StudentId == id)
+                    .ToListAsync();
+
+                if (priorEnrollments.Any())
+                {
+                    _context.StudentSubjectEnrollments.RemoveRange(priorEnrollments);
+                }
+            }
+
             user.ClassId = newClassId;
             user.Class = await _context.Classes.FirstOrDefaultAsync(c => c.Id == newClassId);
-
-            // Clean up obsolete retake enrollments for equal or higher classes
-            var invalidEnrollments = await _context.StudentSubjectEnrollments
-                .Include(se => se.Subject)
-                .Where(se => se.StudentId == id && se.Subject.ClassId >= newClassId)
-                .ToListAsync();
-
-            if (invalidEnrollments.Any())
-            {
-                _context.StudentSubjectEnrollments.RemoveRange(invalidEnrollments);
-            }
         }
         else
         {
