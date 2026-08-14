@@ -10,7 +10,7 @@ The **Assignment Management System** is a full-stack, enterprise-grade web appli
 
 ### Frontend (User Interface)
 - **Framework**: Next.js 14 (App Router architecture with TypeScript)
-- **Styling**: Vanilla CSS tokens & Tailwind CSS with a strict human-code UI design system (zero decorative icons or fluff).
+- **Styling**: Vanilla CSS (Design Tokens architecture) with responsive UI layout.
 - **Hosting Platform**: Vercel Cloud Platform
 - **Environment Integration**: `NEXT_PUBLIC_API_URL` pointing to live backend REST API.
 
@@ -18,7 +18,7 @@ The **Assignment Management System** is a full-stack, enterprise-grade web appli
 - **Framework**: ASP.NET Core 9 Web API (.NET 9 runtime)
 - **Data Access & ORM**: Entity Framework Core 9 with Npgsql PostgreSQL provider.
 - **Security & Authentication**: JWT (JSON Web Tokens) with HS256 signing and BCrypt password hashing.
-- **Containerization**: Multi-stage Dockerfile targeting `mcr.microsoft.com/dotnet/aspnet:9.0` with Linux container file watcher (`inotify`) optimization.
+- **Containerization**: Multi-stage Dockerfile targeting `mcr.microsoft.com/dotnet/aspnet:9.0`.
 - **Hosting Platform**: Render Cloud Platform (Docker runtime).
 - **Live API Endpoint**: `https://assignment-system-api-l6b5.onrender.com`
 
@@ -51,7 +51,7 @@ The **Assignment Management System** is a full-stack, enterprise-grade web appli
 - **One Course = One Teacher Policy**: Re-assigning a teacher to a subject cleanly replaces any historical allocations for that subject.
 - **Strict Lower-Semester Retake Rule**: Students can ONLY apply for retake/backlog courses belonging to classes strictly lower than their current primary semester (`s.ClassId < currentUser.ClassId`).
 - **Automatic Class Update Cleanup**: When a student's primary class is updated to a higher semester, obsolete retake enrollments from prior primary classes are automatically purged.
-- **Human-Code Design System**: All icons, emojis, and decorative badges are omitted in favor of clear typography, structured data tables, and high-contrast status pills.
+- **Strict File Upload Limit**: Enforces a 5MB maximum file upload limit on binary assets stored as Base64 Data URLs.
 
 ---
 
@@ -123,7 +123,7 @@ The **Assignment Management System** is a full-stack, enterprise-grade web appli
 | HTTP Method | Route | Description | Auth Required |
 |---|---|---|---|
 | `POST` | `/api/auth/login` | Authenticates user & returns JWT Token + User Profile | No |
-| `GET` | `/api/auth/profile` | Returns authenticated user details | Yes |
+| `GET` | `/api/auth/me` | Returns authenticated user details | Yes |
 | `GET` | `/api/classes` | Lists all GSTU CSE semester classes | Yes |
 | `POST` | `/api/classes` | Creates new class (Admin) | Admin |
 | `GET` | `/api/subjects` | Lists subjects with teacher allocations | Yes |
@@ -134,43 +134,49 @@ The **Assignment Management System** is a full-stack, enterprise-grade web appli
 | `GET` | `/api/submissions` | Lists submissions for grading or student review | Yes |
 | `POST` | `/api/submissions` | Submits assignment solution | Student |
 | `POST` | `/api/submissions/{id}/grade` | Evaluates student submission with marks & feedback | Teacher/Admin |
-| `GET` | `/api/enrollments/student` | Lists retake course enrollments | Student |
+| `GET` | `/api/enrollments/my` | Lists retake course enrollments for student | Student |
+| `GET` | `/api/enrollments/teacher-pending` | Lists pending retake applications for teacher | Teacher/Admin |
 | `POST` | `/api/enrollments/request` | Requests lower-semester retake course | Student |
-| `POST` | `/api/enrollments/{id}/approve` | Approves student retake request | Teacher/Admin |
+| `PUT` | `/api/enrollments/{id}/approve` | Approves student retake request | Teacher/Admin |
 
 ---
 
 ## 5. Default Seed Accounts
 
-The application automatically initializes default demo accounts upon database setup:
+The application automatically initializes default demo accounts upon database setup. All accounts use the password: `12345`.
 
 | Role | Name | Institutional Email | Password | Assigned Semester | Student ID |
 |---|---|---|---|---|---|
-| **Admin** | CSE Department Head / Admin | `admin@cse.gstu.edu.bd` | `Admin123!` | N/A | N/A |
-| **Teacher** | Dr. Rahman (CSE Faculty) | `teacher@cse.gstu.edu.bd` | `Teacher123!` | N/A | N/A |
-| **Student** | Bondhon Das | `student@cse.gstu.edu.bd` | `Student123!` | CSE 4th Year 1st Semester | `20CSE016` |
-| **Student** | Iftekhar Siddiq Tanvir | `student2@cse.gstu.edu.bd` | `Student123!` | CSE 3rd Year 1st Semester | `20CSE036` |
-| **Student** | Masum Reza | `student3@cse.gstu.edu.bd` | `Student123!` | CSE 3rd Year 1st Semester | `20CSE011` |
+| **Admin** | CSE Department Head / Admin | `admin@cse.gstu.edu.bd` | `12345` | N/A | N/A |
+| **Teacher** | Dr Mrinal Kanti Bawali | `mrinal@gmail.com` | `12345` | Faculty Teacher | N/A |
+| **Teacher** | Dr Saleh Ahmed | `saleh@gmail.com` | `12345` | Faculty Teacher | N/A |
+| **Teacher** | Md Ferdous | `ferdous@gmail.com` | `12345` | Faculty Teacher | N/A |
+| **Teacher** | Md Abdullah | `abdullah@gmail.com` | `12345` | Faculty Teacher | N/A |
+| **Student** | Bondhon Das | `student@cse.gstu.edu.bd` | `12345` | CSE 4th Year 1st Semester | `20CSE016` |
+| **Student** | Iftekhar Siddiq Tanvir | `student2@cse.gstu.edu.bd` | `12345` | CSE 3rd Year 1st Semester | `21CSE036` |
+| **Student** | Masum Reza | `student3@cse.gstu.edu.bd` | `12345` | CSE 3rd Year 1st Semester | `21CSE011` |
+| **Student** | Student 10 | `student10@cse.gstu.edu.bd` | `12345` | CSE 1st Year 1st Semester | `24CSE001` |
 
 ---
 
 ## 6. Automated Testing & Verification Suite
 
-The project includes an **xUnit Automated Testing Suite** located in `backend/Tests/AssignmentSystem.Tests.csproj`. The test suite targets .NET 9 and uses `Entity Framework Core InMemory Database` and `Moq` to validate core business rules, resource-level authorization, and submission workflows.
+The project includes an **xUnit Automated Testing Suite** located in `backend/Tests/AssignmentSystem.Tests.csproj`. The test suite targets .NET 9 and uses `Entity Framework Core InMemory Database` to validate core business rules, resource-level authorization, and submission workflows.
 
 ### Test Execution Command
 ```bash
 dotnet test backend/Tests/AssignmentSystem.Tests.csproj
 ```
 
-### Verified Test Cases (10/10 Passed)
-1. **`MarksValidationTests`**: Verifies that marks assigned to student submissions cannot exceed `MaxMarks` or be negative.
-2. **`DeadlineEnforcementTests`**: Verifies that student submissions submitted past the deadline date/time are rejected or flagged.
+### Verified Test Cases (18/18 Passed)
+1. **`MarksValidationTests`**: Verifies that marks assigned to student submissions cannot exceed `MaxMarks` or be negative ($0 \le \text{Marks} \le \text{MaxMarks}$).
+2. **`DeadlineEnforcementTests`**: Verifies that student submissions submitted past the deadline date/time are rejected.
 3. **`SubmissionAttemptLimitTests`**: Validates that student submission attempts are strictly capped by `MaxSubmissionAttempts`.
-4. **`LowerSemesterRetakePolicyTests`**: Enforces that retake applications for same-semester or upper-semester courses throw a `BadRequestException`.
+4. **`LowerSemesterRetakePolicyTests`**: Enforces that retake applications for same-semester or upper-semester courses throw a `BusinessRuleException`.
 5. **`OneCourseOneTeacherPolicyTests`**: Validates that allocating a new teacher to a course replaces any previous teacher allocations for that course.
 6. **`RoleAuthorizationTests`**: Validates that students cannot create assignments or grade submissions.
 7. **`StudentClassAssignmentTests`**: Validates that updating a student's primary class purges invalid/obsolete enrollments from prior primary classes.
+8. **`FileUploadLimitTests`**: Validates that uploaded file attachments exceeding 5MB are rejected.
 
 ---
 
@@ -190,14 +196,11 @@ npm run dev
 ```
 *Runs on `http://localhost:3000`.*
 
-### Deploying Updates to Production
-Simply push commits to the `main` branch on GitHub (`StrangerbonD/assignment-management-system`). Both Render (Backend Docker Container) and Vercel (Frontend Next.js App) will trigger automated CI/CD builds and deploy within 60 seconds.
-
 ---
 
 ## 8. Assumptions & Architectural Trade-offs
 
-### 💾 Base64 Data URL File Storage Strategy
+### Base64 Data URL File Storage Strategy
 - **Context & Rationale**: Free-tier cloud container hosting platforms (such as Render) operate on an **ephemeral filesystem**, where local container disk storage (`/uploads/`) is wiped upon container redeployment, restart, or scaling.
 - **Architectural Choice**: To guarantee 100% data persistence without requiring external paid cloud object storage subscriptions (e.g., AWS S3, Google Cloud Storage), uploaded question attachments and student submission files are encoded into **Base64 Data URLs** (`data:image/png;base64,...` / `data:application/pdf;base64,...`) and stored directly within PostgreSQL database string columns.
 - **Known Limitations & Mitigations**:

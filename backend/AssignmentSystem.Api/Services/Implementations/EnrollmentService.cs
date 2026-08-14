@@ -40,25 +40,24 @@ public class EnrollmentService : IEnrollmentService
             throw new NotFoundException("Subject not found.");
         }
 
-        // Strict Academic Rule: Students can ONLY apply for backlog or retake courses from LOWER semester classes
-        int GetClassYear(string? className)
+        int GetSemesterIndex(string? className, int? classId)
         {
-            if (string.IsNullOrWhiteSpace(className)) return 0;
-            if (className.Contains("1st Year")) return 1;
-            if (className.Contains("2nd Year")) return 2;
-            if (className.Contains("3rd Year")) return 3;
-            if (className.Contains("4th Year")) return 4;
-            return 0;
+            if (string.IsNullOrWhiteSpace(className)) return classId ?? 0;
+            if (className.Contains("1st Year 1st")) return 1;
+            if (className.Contains("1st Year 2nd")) return 2;
+            if (className.Contains("2nd Year 1st")) return 3;
+            if (className.Contains("2nd Year 2nd")) return 4;
+            if (className.Contains("3rd Year 1st")) return 5;
+            if (className.Contains("3rd Year 2nd")) return 6;
+            if (className.Contains("4th Year 1st")) return 7;
+            if (className.Contains("4th Year 2nd")) return 8;
+            return classId ?? 0;
         }
 
-        int subjectYear = GetClassYear(subject.Class?.Name);
-        int studentYear = GetClassYear(student.Class?.Name);
+        int subjectSem = GetSemesterIndex(subject.Class?.Name, subject.ClassId);
+        int studentSem = GetSemesterIndex(student.Class?.Name, student.ClassId);
 
-        bool isCurrentOrUpper = (subjectYear > 0 && studentYear > 0)
-            ? (subjectYear >= studentYear)
-            : (subject.ClassId >= student.ClassId);
-
-        if (isCurrentOrUpper)
+        if (subjectSem >= studentSem)
         {
             throw new BusinessRuleException("Students can only apply for backlog or retake courses from lower semester classes than their current enrolled class.");
         }
