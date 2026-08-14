@@ -13,7 +13,7 @@ public static class DbInitializer
         {
             await context.Database.EnsureCreatedAsync();
 
-            // Raw SQL schema migrations for existing PostgreSQL databases
+            // Schema column migrations
             await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Assignments\" ADD COLUMN IF NOT EXISTS \"AttachmentUrl\" text NULL;");
             await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Assignments\" ADD COLUMN IF NOT EXISTS \"MaxSubmissionAttempts\" integer NOT NULL DEFAULT 2;");
             await context.Database.ExecuteSqlRawAsync("ALTER TABLE \"Submissions\" ADD COLUMN IF NOT EXISTS \"AttemptCount\" integer NOT NULL DEFAULT 1;");
@@ -23,41 +23,32 @@ public static class DbInitializer
         }
         catch (Exception ex)
         {
-            throw new InvalidOperationException($"PostgreSQL database connection failed. Ensure PostgreSQL is running on localhost:5432 and password in appsettings.json is correct. Details: {ex.Message}", ex);
+            logger?.LogError(ex, "Database schema check warning: {Message}", ex.Message);
         }
 
-        // Ensure CSE GSTU Classes (Semesters) exist
-        var cseClass1 = await context.Classes.FirstOrDefaultAsync(c => c.Name == "CSE 1st Year 1st Semester");
-        if (cseClass1 == null)
+        // 1. Seed 8 Academic Semesters (Classes)
+        async Task<Class> EnsureClass(string name)
         {
-            cseClass1 = new Class { Name = "CSE 1st Year 1st Semester" };
-            await context.Classes.AddAsync(cseClass1);
+            var existing = await context.Classes.FirstOrDefaultAsync(c => c.Name == name);
+            if (existing == null)
+            {
+                existing = new Class { Name = name };
+                await context.Classes.AddAsync(existing);
+                await context.SaveChangesAsync();
+            }
+            return existing;
         }
 
-        var cseClass2 = await context.Classes.FirstOrDefaultAsync(c => c.Name == "CSE 2nd Year 1st Semester");
-        if (cseClass2 == null)
-        {
-            cseClass2 = new Class { Name = "CSE 2nd Year 1st Semester" };
-            await context.Classes.AddAsync(cseClass2);
-        }
+        var sem1 = await EnsureClass("CSE 1st Year 1st Semester");
+        var sem2 = await EnsureClass("CSE 1st Year 2nd Semester");
+        var sem3 = await EnsureClass("CSE 2nd Year 1st Semester");
+        var sem4 = await EnsureClass("CSE 2nd Year 2nd Semester");
+        var sem5 = await EnsureClass("CSE 3rd Year 1st Semester");
+        var sem6 = await EnsureClass("CSE 3rd Year 2nd Semester");
+        var sem7 = await EnsureClass("CSE 4th Year 1st Semester");
+        var sem8 = await EnsureClass("CSE 4th Year 2nd Semester");
 
-        var cseClass3 = await context.Classes.FirstOrDefaultAsync(c => c.Name == "CSE 3rd Year 1st Semester");
-        if (cseClass3 == null)
-        {
-            cseClass3 = new Class { Name = "CSE 3rd Year 1st Semester" };
-            await context.Classes.AddAsync(cseClass3);
-        }
-
-        var cseClass4 = await context.Classes.FirstOrDefaultAsync(c => c.Name == "CSE 4th Year 1st Semester");
-        if (cseClass4 == null)
-        {
-            cseClass4 = new Class { Name = "CSE 4th Year 1st Semester" };
-            await context.Classes.AddAsync(cseClass4);
-        }
-
-        await context.SaveChangesAsync();
-
-        // Ensure Official GSTU CSE Course Subjects exist
+        // 2. Seed 16 Courses (2 per semester)
         async Task<Subject> EnsureSubject(string name, int classId)
         {
             var existing = await context.Subjects.FirstOrDefaultAsync(s => s.Name == name);
@@ -67,37 +58,54 @@ public static class DbInitializer
                 await context.Subjects.AddAsync(existing);
                 await context.SaveChangesAsync();
             }
+            else if (existing.ClassId != classId)
+            {
+                existing.ClassId = classId;
+                await context.SaveChangesAsync();
+            }
             return existing;
         }
 
-        var subOop = await EnsureSubject("CSE156: Object Oriented Programming", cseClass1.Id);
-        var subOopLab = await EnsureSubject("CSE157: Object Oriented Programming Lab", cseClass1.Id);
+        // Sem 1
+        var cse101 = await EnsureSubject("CSE101: Introduction to Computer Systems", sem1.Id);
+        var cse102 = await EnsureSubject("CSE102: Structured Programming", sem1.Id);
 
-        var subAlgo = await EnsureSubject("CSE251: Algorithm Design and Analysis", cseClass2.Id);
-        var subAlgoLab = await EnsureSubject("CSE252: Algorithm Design and Analysis Lab", cseClass2.Id);
+        // Sem 2
+        var cse151 = await EnsureSubject("CSE151: Discrete Mathematics", sem2.Id);
+        var cse152 = await EnsureSubject("CSE152: Digital Logic Design", sem2.Id);
 
-        var subNet = await EnsureSubject("CSE353: Computer Networks", cseClass3.Id);
-        var subNetLab = await EnsureSubject("CSE354: Computer Networks Lab", cseClass3.Id);
+        // Sem 3
+        var cse201 = await EnsureSubject("CSE201: Object Oriented Programming", sem3.Id);
+        var cse202 = await EnsureSubject("CSE202: Object Oriented Programming Lab", sem3.Id);
 
-        var subMl = await EnsureSubject("CSE451: Machine Learning", cseClass4.Id);
-        var subMlLab = await EnsureSubject("CSE452: Machine Learning Lab", cseClass4.Id);
+        // Sem 4
+        var cse251 = await EnsureSubject("CSE251: Algorithm Design and Analysis", sem4.Id);
+        var cse252 = await EnsureSubject("CSE252: Algorithm Design and Analysis Lab", sem4.Id);
 
-        // Remove old non-standard subjects if present
-        var officialSubjectIds = new[] { subOop.Id, subOopLab.Id, subAlgo.Id, subAlgoLab.Id, subNet.Id, subNetLab.Id, subMl.Id, subMlLab.Id };
-        var obsoleteSubjects = await context.Subjects.Where(s => !officialSubjectIds.Contains(s.Id)).ToListAsync();
-        if (obsoleteSubjects.Any())
-        {
-            context.Subjects.RemoveRange(obsoleteSubjects);
-            await context.SaveChangesAsync();
-        }
+        // Sem 5
+        var cse301 = await EnsureSubject("CSE301: Computer Architecture", sem5.Id);
+        var cse302 = await EnsureSubject("CSE302: Operating Systems", sem5.Id);
 
-        async Task EnsureUserExists(string email, string fullName, UserRole role, string password, int? classId, string? studentId)
+        // Sem 6
+        var cse351 = await EnsureSubject("CSE351: Computer Networks", sem6.Id);
+        var cse352 = await EnsureSubject("CSE352: Computer Networks Lab", sem6.Id);
+
+        // Sem 7
+        var cse401 = await EnsureSubject("CSE401: Artificial Intelligence", sem7.Id);
+        var cse402 = await EnsureSubject("CSE402: Artificial Intelligence Lab", sem7.Id);
+
+        // Sem 8
+        var cse451 = await EnsureSubject("CSE451: Machine Learning", sem8.Id);
+        var cse452 = await EnsureSubject("CSE452: Machine Learning Lab", sem8.Id);
+
+        // 3. Helper to Seed Accounts
+        async Task<User> EnsureUserExists(string email, string fullName, UserRole role, string password, int? classId, string? studentId)
         {
             var bcryptHash = BCrypt.Net.BCrypt.HashPassword(password);
             var existing = await context.Users.FirstOrDefaultAsync(u => u.Email.ToLower() == email.ToLower());
             if (existing == null)
             {
-                var newUser = new User
+                existing = new User
                 {
                     StudentId = studentId,
                     IsApproved = true,
@@ -107,7 +115,8 @@ public static class DbInitializer
                     Role = role,
                     ClassId = classId
                 };
-                await context.Users.AddAsync(newUser);
+                await context.Users.AddAsync(existing);
+                await context.SaveChangesAsync();
             }
             else
             {
@@ -116,108 +125,182 @@ public static class DbInitializer
                 existing.PasswordHash = bcryptHash;
                 existing.FullName = fullName;
                 existing.Role = role;
-                if (!existing.ClassId.HasValue && classId.HasValue)
-                {
-                    existing.ClassId = classId;
-                }
+                existing.ClassId = classId;
+                await context.SaveChangesAsync();
             }
+            return existing;
         }
 
-        // Seed CSE GSTU Accounts with Student IDs
-        await EnsureUserExists("admin@cse.gstu.edu.bd", "CSE Department Head / Admin", UserRole.Admin, "Admin123!", null, null);
-        await EnsureUserExists("teacher@cse.gstu.edu.bd", "Dr. Rahman (CSE Faculty)", UserRole.Teacher, "Teacher123!", null, null);
-        await EnsureUserExists("student@cse.gstu.edu.bd", "Bondhon Das", UserRole.Student, "Student123!", cseClass4.Id, "20CSE016");
-        await EnsureUserExists("student2@cse.gstu.edu.bd", "Iftekhar Siddiq Tanvir", UserRole.Student, "Student123!", cseClass3.Id, "20CSE036");
-        await EnsureUserExists("student3@cse.gstu.edu.bd", "Masum Reza", UserRole.Student, "Student123!", cseClass3.Id, "20CSE011");
+        // Admin Account
+        var admin = await EnsureUserExists("admin@cse.gstu.edu.bd", "CSE Department Head / Admin", UserRole.Admin, "12345", null, null);
 
-        await context.SaveChangesAsync();
+        // 4 Teachers
+        var t1 = await EnsureUserExists("mrinal@gmail.com", "Dr Mrinal Kanti Bawali", UserRole.Teacher, "12345", null, null);
+        var t2 = await EnsureUserExists("saleh@gmail.com", "Dr Saleh Ahmed", UserRole.Teacher, "12345", null, null);
+        var t3 = await EnsureUserExists("ferdous@gmail.com", "Md Ferdous", UserRole.Teacher, "12345", null, null);
+        var t4 = await EnsureUserExists("abdullah@gmail.com", "Md Abdullah", UserRole.Teacher, "12345", null, null);
 
-        // Explicit Raw SQL Updates for PostgreSQL
-        await context.Database.ExecuteSqlRawAsync(@"
-            CREATE TABLE IF NOT EXISTS ""StudentSubjectEnrollments"" (
-                ""Id"" SERIAL PRIMARY KEY,
-                ""StudentId"" INT NOT NULL REFERENCES ""Users""(""Id"") ON DELETE CASCADE,
-                ""SubjectId"" INT NOT NULL REFERENCES ""Subjects""(""Id"") ON DELETE CASCADE,
-                ""IsApproved"" BOOLEAN NOT NULL DEFAULT FALSE,
-                ""RequestedAt"" TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                ""ApprovedAt"" TIMESTAMP WITH TIME ZONE NULL
-            );
-        ");
+        // Also ensure teacher@cse.gstu.edu.bd exists for backwards compatibility
+        await EnsureUserExists("teacher@cse.gstu.edu.bd", "Dr Mrinal Kanti Bawali", UserRole.Teacher, "12345", null, null);
 
-        await context.Database.ExecuteSqlRawAsync($"UPDATE \"Users\" SET \"ClassId\" = {cseClass4.Id}, \"StudentId\" = '20CSE016', \"FullName\" = 'Bondhon Das', \"IsApproved\" = TRUE WHERE LOWER(\"Email\") = 'student@cse.gstu.edu.bd';");
-        await context.Database.ExecuteSqlRawAsync("UPDATE \"Users\" SET \"StudentId\" = '20CSE036', \"FullName\" = 'Iftekhar Siddiq Tanvir', \"IsApproved\" = TRUE WHERE LOWER(\"Email\") = 'student2@cse.gstu.edu.bd';");
-        await context.Database.ExecuteSqlRawAsync("UPDATE \"Users\" SET \"StudentId\" = '20CSE011', \"FullName\" = 'Masum Reza', \"IsApproved\" = TRUE WHERE LOWER(\"Email\") = 'student3@cse.gstu.edu.bd';");
+        // 16 Students (2 per semester)
+        // Sem 1 Students
+        await EnsureUserExists("student10@cse.gstu.edu.bd", "Tanzim Ahmed", UserRole.Student, "12345", sem1.Id, "24CSE001");
+        await EnsureUserExists("student11@cse.gstu.edu.bd", "Rafiul Islam", UserRole.Student, "12345", sem1.Id, "24CSE002");
 
-        // Purge obsolete enrollments from previous primary classes when student class updates
-        await context.Database.ExecuteSqlRawAsync(@"
-            DELETE FROM ""StudentSubjectEnrollments""
-            WHERE ""Id"" IN (
-                SELECT se.""Id""
-                FROM ""StudentSubjectEnrollments"" se
-                INNER JOIN ""Users"" u ON se.""StudentId"" = u.""Id""
-                INNER JOIN ""Subjects"" s ON se.""SubjectId"" = s.""Id""
-                WHERE s.""ClassId"" >= u.""ClassId"" OR (u.""ClassId"" IS NOT NULL AND s.""ClassId"" < u.""ClassId"" AND se.""ApprovedAt"" IS NULL)
-            );
-        ");
+        // Sem 2 Students
+        await EnsureUserExists("student8@cse.gstu.edu.bd", "Arif Hossain", UserRole.Student, "12345", sem2.Id, "23CSE001");
+        await EnsureUserExists("student9@cse.gstu.edu.bd", "Jannatul Ferdous", UserRole.Student, "12345", sem2.Id, "23CSE002");
 
-        var mainTeacher = await context.Users.FirstAsync(u => u.Email == "teacher@cse.gstu.edu.bd");
-        var mainStudent = await context.Users.FirstAsync(u => u.Email == "student@cse.gstu.edu.bd");
+        // Sem 3 Students
+        await EnsureUserExists("student6@cse.gstu.edu.bd", "Rakib Hasan", UserRole.Student, "12345", sem3.Id, "22CSE001");
+        await EnsureUserExists("student7@cse.gstu.edu.bd", "Nusrat Jahan", UserRole.Student, "12345", sem3.Id, "22CSE002");
 
-        // Purge all @school.com legacy users completely
-        await context.Database.ExecuteSqlRawAsync("DELETE FROM \"TeacherSubjects\" WHERE \"TeacherId\" IN (SELECT \"Id\" FROM \"Users\" WHERE LOWER(\"Email\") LIKE '%@school.com');");
-        await context.Database.ExecuteSqlRawAsync($"UPDATE \"Assignments\" SET \"CreatedBy\" = {mainTeacher.Id} WHERE \"CreatedBy\" IN (SELECT \"Id\" FROM \"Users\" WHERE LOWER(\"Email\") LIKE '%@school.com');");
-        await context.Database.ExecuteSqlRawAsync($"UPDATE \"Submissions\" SET \"StudentId\" = {mainStudent.Id} WHERE \"StudentId\" IN (SELECT \"Id\" FROM \"Users\" WHERE LOWER(\"Email\") LIKE '%@school.com');");
-        await context.Database.ExecuteSqlRawAsync("DELETE FROM \"Users\" WHERE LOWER(\"Email\") LIKE '%@school.com';");
+        // Sem 4 Students
+        await EnsureUserExists("student12@cse.gstu.edu.bd", "Fahim Rahman", UserRole.Student, "12345", sem4.Id, "22CSE003");
+        await EnsureUserExists("student13@cse.gstu.edu.bd", "Sadia Akter", UserRole.Student, "12345", sem4.Id, "22CSE004");
 
-        // Enforce 1 Course = 1 Teacher Policy: Clean up duplicate teacher allocations per subject
-        await context.Database.ExecuteSqlRawAsync(@"
-            DELETE FROM ""TeacherSubjects""
-            WHERE ""Id"" NOT IN (
-                SELECT MAX(""Id"")
-                FROM ""TeacherSubjects""
-                GROUP BY ""SubjectId""
-            );
-        ");
+        // Sem 5 Students
+        await EnsureUserExists("student2@cse.gstu.edu.bd", "Iftekhar Siddiq Tanvir", UserRole.Student, "12345", sem5.Id, "21CSE036");
+        await EnsureUserExists("student3@cse.gstu.edu.bd", "Masum Reza", UserRole.Student, "12345", sem5.Id, "21CSE011");
 
-        // Assign Teacher to all 8 CSE courses if unassigned
-        var allSubjects = new[] { subOop, subOopLab, subAlgo, subAlgoLab, subNet, subNetLab, subMl, subMlLab };
-        foreach (var s in allSubjects)
+        // Sem 6 Students
+        await EnsureUserExists("student4@cse.gstu.edu.bd", "Abdullah Al Mamun", UserRole.Student, "12345", sem6.Id, "21CSE001");
+        await EnsureUserExists("student14@cse.gstu.edu.bd", "Mim Akter", UserRole.Student, "12345", sem6.Id, "21CSE005");
+
+        // Sem 7 Students
+        await EnsureUserExists("student@cse.gstu.edu.bd", "Bondhon Das", UserRole.Student, "12345", sem7.Id, "20CSE016");
+        await EnsureUserExists("student15@cse.gstu.edu.bd", "Shakil Ahmed", UserRole.Student, "12345", sem7.Id, "20CSE020");
+
+        // Sem 8 Students
+        await EnsureUserExists("student16@cse.gstu.edu.bd", "Mehedi Hasan", UserRole.Student, "12345", sem8.Id, "20CSE025");
+        await EnsureUserExists("student17@cse.gstu.edu.bd", "Sumaiya Islam", UserRole.Student, "12345", sem8.Id, "20CSE030");
+
+        // 4. Teacher-Course Allocations
+        async Task AssignTeacher(int teacherId, int subjectId)
         {
-            if (!await context.TeacherSubjects.AnyAsync(ts => ts.SubjectId == s.Id))
+            var existing = await context.TeacherSubjects.FirstOrDefaultAsync(ts => ts.SubjectId == subjectId);
+            if (existing == null)
             {
-                await context.TeacherSubjects.AddAsync(new TeacherSubject { TeacherId = mainTeacher.Id, SubjectId = s.Id });
+                await context.TeacherSubjects.AddAsync(new TeacherSubject { TeacherId = teacherId, SubjectId = subjectId });
             }
+            else if (existing.TeacherId != teacherId)
+            {
+                existing.TeacherId = teacherId;
+            }
+            await context.SaveChangesAsync();
         }
-        await context.SaveChangesAsync();
 
-        // Ensure Sample Assignments exist for CSE courses
-        async Task EnsureAssignment(string title, string desc, int subjectId)
+        // Dr Mrinal Kanti Bawali
+        await AssignTeacher(t1.Id, cse101.Id);
+        await AssignTeacher(t1.Id, cse102.Id);
+        await AssignTeacher(t1.Id, cse201.Id);
+        await AssignTeacher(t1.Id, cse202.Id);
+
+        // Dr Saleh Ahmed
+        await AssignTeacher(t2.Id, cse151.Id);
+        await AssignTeacher(t2.Id, cse152.Id);
+        await AssignTeacher(t2.Id, cse251.Id);
+        await AssignTeacher(t2.Id, cse252.Id);
+
+        // Md Ferdous
+        await AssignTeacher(t3.Id, cse301.Id);
+        await AssignTeacher(t3.Id, cse302.Id);
+        await AssignTeacher(t3.Id, cse351.Id);
+        await AssignTeacher(t3.Id, cse352.Id);
+
+        // Md Abdullah
+        await AssignTeacher(t4.Id, cse401.Id);
+        await AssignTeacher(t4.Id, cse402.Id);
+        await AssignTeacher(t4.Id, cse451.Id);
+        await AssignTeacher(t4.Id, cse452.Id);
+
+        // 5. Seed 32 Assignments (2 per course)
+        async Task EnsureAssignment(string title, string desc, int subjectId, int createdById)
         {
-            if (!await context.Assignments.AnyAsync(a => a.Title == title))
+            var existing = await context.Assignments.FirstOrDefaultAsync(a => a.SubjectId == subjectId && a.Title == title);
+            if (existing == null)
             {
                 await context.Assignments.AddAsync(new Assignment
                 {
                     Title = title,
                     Description = desc,
-                    Deadline = DateTime.UtcNow.AddDays(7),
+                    Deadline = DateTime.UtcNow.AddDays(14),
                     MaxMarks = 100,
                     MaxSubmissionAttempts = 2,
                     Status = AssignmentStatus.Published,
                     SubjectId = subjectId,
-                    CreatedBy = mainTeacher.Id,
+                    CreatedBy = createdById,
                     CreatedAt = DateTime.UtcNow
                 });
+                await context.SaveChangesAsync();
             }
         }
 
-        await EnsureAssignment("Lab Assignment 01: Socket Programming & Packet Sniffing", "Implement TCP/UDP socket server and analyze packet headers in Python or C++.", subNet.Id);
-        await EnsureAssignment("Lab Assignment 02: Network Topology & Wireshark Analysis", "Capture TCP handshake packets using Wireshark and prepare a report.", subNetLab.Id);
-        await EnsureAssignment("Lab Assignment 01: Supervised Model Training", "Implement Decision Trees and Logistic Regression using Python scikit-learn.", subMl.Id);
-        await EnsureAssignment("Lab Assignment 01: C++ OOP Class Hierarchy & Inheritance", "Design a Banking Management System utilizing Virtual Functions and Encapsulation.", subOop.Id);
-        await EnsureAssignment("Lab Assignment 01: Dynamic Programming & Graph Traversal", "Implement Dijkstra's Algorithm and Knapsack DP solution in C++.", subAlgo.Id);
+        // CSE101
+        await EnsureAssignment("Assignment 01: Computer System Components", "Analyze hardware components, bus architecture, and system peripherals.", cse101.Id, t1.Id);
+        await EnsureAssignment("Assignment 02: CPU, Memory and I/O Analysis", "Compare RISC vs CISC architecture and memory hierarchy levels.", cse101.Id, t1.Id);
 
-        await context.SaveChangesAsync();
+        // CSE102
+        await EnsureAssignment("Assignment 01: C Programming Fundamentals", "Write C programs demonstrating control flow, loops, and conditional logic.", cse102.Id, t1.Id);
+        await EnsureAssignment("Assignment 02: Functions, Arrays and Pointers", "Implement dynamic memory allocation using malloc/calloc and pointer arithmetic.", cse102.Id, t1.Id);
 
-        logger?.LogInformation("Cleaned legacy users. CSE GSTU Student IDs (20CSE016, 20CSE036, 20CSE011) ensured successfully.");
+        // CSE151
+        await EnsureAssignment("Assignment 01: Set Theory and Logic", "Solve propositional logic proofs and set theory operations.", cse151.Id, t2.Id);
+        await EnsureAssignment("Assignment 02: Graph Theory and Relations", "Analyze equivalence relations, Hasse diagrams, and Eulerian graphs.", cse151.Id, t2.Id);
+
+        // CSE152
+        await EnsureAssignment("Assignment 01: Boolean Algebra and Logic Gates", "Simplify Boolean expressions using Karnaugh Maps (K-Maps).", cse152.Id, t2.Id);
+        await EnsureAssignment("Assignment 02: Combinational Circuit Design", "Design 4-bit Binary Adder, Multiplexer, and Decoder circuits.", cse152.Id, t2.Id);
+
+        // CSE201
+        await EnsureAssignment("Assignment 01: C++ OOP Class Hierarchy", "Design C++ classes utilizing Encapsulation, Constructor overloading, and Destructors.", cse201.Id, t1.Id);
+        await EnsureAssignment("Assignment 02: Inheritance and Polymorphism", "Implement Virtual Functions, Abstract base classes, and Runtime Polymorphism.", cse201.Id, t1.Id);
+
+        // CSE202
+        await EnsureAssignment("Assignment 01: C++ Class and Object Implementation", "Build a Student Information System using C++ Classes and File I/O.", cse202.Id, t1.Id);
+        await EnsureAssignment("Assignment 02: Inheritance Based Application", "Implement a Banking Account hierarchy using Inheritance and Exception Handling.", cse202.Id, t1.Id);
+
+        // CSE251
+        await EnsureAssignment("Assignment 01: Dynamic Programming and Graph Traversal", "Implement 0/1 Knapsack DP solution and Breadth-First Search (BFS).", cse251.Id, t2.Id);
+        await EnsureAssignment("Assignment 02: Dijkstra and Bellman-Ford Implementation", "Compare Dijkstra's Single Source Shortest Path with Bellman-Ford Algorithm.", cse251.Id, t2.Id);
+
+        // CSE252
+        await EnsureAssignment("Assignment 01: Sorting Algorithm Comparison", "Benchmark QuickSort, MergeSort, and HeapSort time complexities in C++.", cse252.Id, t2.Id);
+        await EnsureAssignment("Assignment 02: Graph Algorithm Implementation", "Implement Kruskal's Minimum Spanning Tree using Disjoint Set Union (DSU).", cse252.Id, t2.Id);
+
+        // CSE301
+        await EnsureAssignment("Assignment 01: CPU Architecture Analysis", "Analyze instruction pipeline stages, data hazards, and branch prediction.", cse301.Id, t3.Id);
+        await EnsureAssignment("Assignment 02: Cache Memory Simulation", "Simulate Direct-Mapped, Set-Associative, and Fully-Associative Cache Mapping.", cse301.Id, t3.Id);
+
+        // CSE302
+        await EnsureAssignment("Assignment 01: Process Scheduling Algorithms", "Implement FCFS, SJF, Round Robin, and Priority Process Scheduling.", cse302.Id, t3.Id);
+        await EnsureAssignment("Assignment 02: Deadlock Detection and Avoidance", "Implement Banker's Algorithm for Resource Allocation and Deadlock Avoidance.", cse302.Id, t3.Id);
+
+        // CSE351
+        await EnsureAssignment("Assignment 01: Socket Programming and Packet Sniffing", "Implement TCP/UDP socket server and analyze IP header structures.", cse351.Id, t3.Id);
+        await EnsureAssignment("Assignment 02: Network Topology and Wireshark Analysis", "Capture TCP handshake packets using Wireshark and analyze throughput.", cse351.Id, t3.Id);
+
+        // CSE352
+        await EnsureAssignment("Assignment 01: TCP Client-Server Communication", "Build a Multi-threaded Chat Client-Server using C++ or Python sockets.", cse352.Id, t3.Id);
+        await EnsureAssignment("Assignment 02: Network Configuration and Analysis", "Configure VLANs, Static Routing, and Subnetting in Cisco Packet Tracer.", cse352.Id, t3.Id);
+
+        // CSE401
+        await EnsureAssignment("Assignment 01: Search Algorithms in AI", "Compare Uninformed (BFS, DFS) vs Informed (A*, Greedy Best-First) Search.", cse401.Id, t4.Id);
+        await EnsureAssignment("Assignment 02: Knowledge Representation", "Represent domain knowledge using First-Order Logic and Semantic Networks.", cse401.Id, t4.Id);
+
+        // CSE402
+        await EnsureAssignment("Assignment 01: BFS and DFS Implementation", "Implement Breadth-First Search and Depth-First Search for maze solving.", cse402.Id, t4.Id);
+        await EnsureAssignment("Assignment 02: A* Search Algorithm Implementation", "Implement A* Search Algorithm using Manhattan Distance heuristic.", cse402.Id, t4.Id);
+
+        // CSE451
+        await EnsureAssignment("Assignment 01: Supervised Model Training", "Train Decision Trees, Random Forest, and Support Vector Machines (SVM).", cse451.Id, t4.Id);
+        await EnsureAssignment("Assignment 02: Classification Using Machine Learning", "Evaluate Model Accuracy, Precision, Recall, F1-Score, and Confusion Matrix.", cse451.Id, t4.Id);
+
+        // CSE452
+        await EnsureAssignment("Assignment 01: Linear Regression Implementation", "Implement Linear & Polynomial Regression from scratch using NumPy.", cse452.Id, t4.Id);
+        await EnsureAssignment("Assignment 02: Decision Tree Classification", "Build a Decision Tree Classifier using Python scikit-learn and plot tree diagrams.", cse452.Id, t4.Id);
+
+        logger?.LogInformation("Database seeded successfully with 8 Semesters, 16 Courses, 4 Teachers, 16 Students, and 32 Assignments!");
     }
 }

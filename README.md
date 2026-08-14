@@ -64,11 +64,26 @@ npm run dev
 
 ## 🔐 Default Seeded Test Credentials
 
-| Role | Email | Password |
-| :--- | :--- | :--- |
-| **Admin** | `admin@cse.gstu.edu.bd` | `Admin123!` |
-| **Teacher** | `teacher@cse.gstu.edu.bd` | `Teacher123!` |
-| **Student** | `student@cse.gstu.edu.bd` | `Student123!` |
+*(All accounts share the password: `12345`)*
+
+### 👑 Admin
+- **Email**: `admin@cse.gstu.edu.bd` | **Password**: `12345`
+
+### 👨‍🏫 Teachers
+- **Dr Mrinal Kanti Bawali**: `mrinal@gmail.com` | **Password**: `12345`
+- **Dr Saleh Ahmed**: `saleh@gmail.com` | **Password**: `12345`
+- **Md Ferdous**: `ferdous@gmail.com` | **Password**: `12345`
+- **Md Abdullah**: `abdullah@gmail.com` | **Password**: `12345`
+
+### 👨‍🎓 Sample Students (2 Per Semester)
+- **CSE 1st Year 1st Sem**: `student10@cse.gstu.edu.bd` (`24CSE001`) / `student11@cse.gstu.edu.bd` (`24CSE002`) | **Password**: `12345`
+- **CSE 1st Year 2nd Sem**: `student8@cse.gstu.edu.bd` (`23CSE001`) / `student9@cse.gstu.edu.bd` (`23CSE002`) | **Password**: `12345`
+- **CSE 2nd Year 1st Sem**: `student6@cse.gstu.edu.bd` (`22CSE001`) / `student7@cse.gstu.edu.bd` (`22CSE002`) | **Password**: `12345`
+- **CSE 2nd Year 2nd Sem**: `student12@cse.gstu.edu.bd` (`22CSE003`) / `student13@cse.gstu.edu.bd` (`22CSE004`) | **Password**: `12345`
+- **CSE 3rd Year 1st Sem**: `student2@cse.gstu.edu.bd` (`21CSE036`) / `student3@cse.gstu.edu.bd` (`21CSE011`) | **Password**: `12345`
+- **CSE 3rd Year 2nd Sem**: `student4@cse.gstu.edu.bd` (`21CSE001`) / `student14@cse.gstu.edu.bd` (`21CSE005`) | **Password**: `12345`
+- **CSE 4th Year 1st Sem**: `student@cse.gstu.edu.bd` (`20CSE016`) / `student15@cse.gstu.edu.bd` (`20CSE020`) | **Password**: `12345`
+- **CSE 4th Year 2nd Sem**: `student16@cse.gstu.edu.bd` (`20CSE025`) / `student17@cse.gstu.edu.bd` (`20CSE030`) | **Password**: `12345`
 
 ---
 
