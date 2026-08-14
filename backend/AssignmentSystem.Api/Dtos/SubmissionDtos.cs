@@ -6,12 +6,12 @@ namespace AssignmentSystem.Api.Dtos;
 public record CreateSubmissionDto(
     [Required] int AssignmentId,
     [Required] string AnswerText,
-    [Url] string? FileUrl
+    string? FileUrl
 );
 
 public record UpdateSubmissionDto(
     [Required] string AnswerText,
-    [Url] string? FileUrl
+    string? FileUrl
 );
 
 public record GradeSubmissionDto(

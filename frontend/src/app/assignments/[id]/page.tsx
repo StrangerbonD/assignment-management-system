@@ -174,7 +174,7 @@ export default function AssignmentDetailPage() {
 
         {/* Question File Attachment Display */}
         {assignment.attachmentUrl && (
-          <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '6px', border: '1px solid #cbd5e1', marginBottom: '1.5rem' }}>
+          <div style={{ background: '#f8fafc', padding: '1rem', borderRadius: '6px', border: '1px solid #cbd5e1', marginBottom: '1.5rem', overflow: 'hidden' }}>
             <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '0.5rem', color: '#006633' }}>
               Question File Attachment
             </div>
@@ -202,9 +202,9 @@ export default function AssignmentDetailPage() {
                 </div>
               </div>
             ) : (
-              <div>
+              <div style={{ overflowWrap: 'anywhere' }}>
                 <a href={assignment.attachmentUrl} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">
-                  Open Question File ({assignment.attachmentUrl})
+                  Open Question File ({assignment.attachmentUrl.length > 40 ? assignment.attachmentUrl.substring(0, 40) + '...' : assignment.attachmentUrl})
                 </a>
               </div>
             )}
@@ -375,7 +375,7 @@ export default function AssignmentDetailPage() {
                   <input
                     id="answerFileUrl"
                     name="answerFileUrl"
-                    type="url"
+                    type="text"
                     className="form-input"
                     placeholder="https://github.com/myrepo or Google Drive link"
                     value={fileUrl}
@@ -385,8 +385,20 @@ export default function AssignmentDetailPage() {
                 </div>
 
                 {fileUrl && (
-                  <div style={{ marginTop: '0.75rem', padding: '0.5rem 0.8rem', background: '#e6f4ed', borderRadius: '4px', fontSize: '0.85rem', color: '#006633' }}>
-                    ✅ Attached File: <a href={fileUrl} target="_blank" rel="noreferrer" style={{ textDecoration: 'underline', fontWeight: 600 }}>{fileUrl}</a>
+                  <div style={{ marginTop: '0.75rem', padding: '0.6rem 0.8rem', background: '#e6f4ed', borderRadius: '4px', fontSize: '0.85rem', color: '#006633', overflowWrap: 'anywhere' }}>
+                    ✅ Attached File: {isImageFile(fileUrl) ? (
+                      <div style={{ marginTop: '0.4rem' }}>
+                        <img src={fileUrl} alt="Attached Preview" style={{ maxWidth: '100%', maxHeight: '180px', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                      </div>
+                    ) : isPdfFile(fileUrl) ? (
+                      <a href={fileUrl} target="_blank" rel="noreferrer" style={{ textDecoration: 'underline', fontWeight: 600 }}>
+                        📄 View PDF Document Attachment
+                      </a>
+                    ) : (
+                      <a href={fileUrl} target="_blank" rel="noreferrer" style={{ textDecoration: 'underline', fontWeight: 600 }}>
+                        📎 Open File Attachment ({fileUrl.length > 40 ? fileUrl.substring(0, 40) + '...' : fileUrl})
+                      </a>
+                    )}
                   </div>
                 )}
               </div>
