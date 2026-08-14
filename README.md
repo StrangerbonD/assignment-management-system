@@ -1,99 +1,213 @@
-# Gopalganj Science and Technology University (GSTU)
-## Department of Computer Science & Engineering (CSE)
+# Assignment and Submission Management System
 
-# 🎓 Full-Stack University Assignment & Marksheet Management System
+## Project Overview
 
-A robust, enterprise-grade, full-stack Academic Assignment & Evaluation System built using **Next.js 14 (TypeScript)** and **ASP.NET Core 9 (Web API)** backed by **PostgreSQL**.
+The **Assignment and Submission Management System** is a full-stack, role-based academic evaluation application built for schools and universities. Developed for the Department of Computer Science and Engineering (CSE) at Gopalganj Science and Technology University (GSTU), the system facilitates seamless course administration, assignment publishing, student solution submission, automated attempt tracking, and faculty grading.
 
----
-
-## 🌟 Key Features
-
-### 👨‍🎓 Student Portal
-- **Primary Course Dashboard**: Automatically enrolled in all core subjects belonging to their assigned class.
-- **Lower-Semester Retake Application Engine**: Apply for backlog/retake courses strictly restricted to lower semester classes (`s.ClassId < user.ClassId`).
-- **Dynamic Enrolled Counter**: View accurate combined count of primary and approved retake courses.
-- **Submission Attempt Control**: Configurable maximum submission limits per assignment with overdue deadline enforcement.
-- **Marksheet Performance View**: Real-time view of assignment scores and average percentage progress across semesters.
-
-### 👨‍🏫 Teacher Portal
-- **Course Assignment Builder**: Create and publish assignments with deadline tracking, file attachments, max marks, and attempt limits.
-- **Student Submission Evaluation**: Grade student answers, attach constructive feedback, and allow attempt resubmissions.
-- **Retake Approval Hub**: Review, approve, or reject student backlog course enrollment applications.
-- **Course Marksheet Matrix & Grade Summary**:
-  - Dynamically expanding matrix table (`Student ID`, `Student Name`, `A1`, `A2`... `Total Marks`, `Average Score %`).
-  - **📥 Export to Excel (.CSV)**: 1-click spreadsheet download.
-  - **🖨️ Print / Save PDF**: Official academic grade reporting.
-
-### 🛡️ Admin Portal
-- **Department User Management**: Full control over Student, Teacher, and Admin accounts.
-- **Class & Subject Allocation**: Add semester classes, subjects, and enforce **1 Course = 1 Assigned Teacher** policy.
-- **Student Class Transfer**: Transfer student enrolled classes with automatic data persistence across server reloads.
-- **Password Reset & ID Verification**: Admin password reset utility and student ID card photo verification modal.
+The application is architected with a **Next.js 14 (TypeScript)** Single Page Application frontend and an **ASP.NET Core 9 (C#)** RESTful Web API backend, utilizing **PostgreSQL** for relational data persistence.
 
 ---
 
-## 🛠️ Technology Stack
+## Live Deployment Links
 
-- **Frontend**: Next.js 14, React, TypeScript, Vanilla CSS (Design Tokens), Fetch API.
-- **Backend API**: ASP.NET Core 9 (C#), Entity Framework Core, JWT Authentication, BCrypt Hashing.
-- **Database**: PostgreSQL (Npgsql Provider).
-- **Automated Testing**: xUnit Test Framework (10/10 Passing Unit Tests).
+- **Frontend Application**: `https://assignment-management-system-lfn04j41e-bondhon.vercel.app`
+- **Backend API & Swagger Documentation**: `https://assignment-system-api-l6b5.onrender.com/swagger`
+- **Source Code Repository**: `https://github.com/StrangerbonD/assignment-management-system`
 
 ---
 
-## 🚀 Local Development Setup
+## Key Features and Role Capabilities
 
-### 1. Backend API Setup (.NET 9)
+### 1. Administrator Role
+- **User Management**: Approve pending student registration requests based on uploaded Student ID Card proof. Update user details or delete accounts.
+- **Academic Class & Semester Allocation**: Create and manage academic semesters (e.g., CSE 1st Year 1st Semester through CSE 4th Year 2nd Semester). Transfer student primary class assignments with automatic purging of invalid retake enrollments.
+- **Subject & Teacher Allocation**: Manage course subjects and assign faculty members enforcing a strict **One Course = One Assigned Teacher** policy.
+- **Account Recovery & System Audit**: Reset passwords for faculty or student accounts and inspect overall system statistics.
+
+### 2. Teacher Role
+- **Assignment Lifecycle Management**: Create, update, publish, or delete assignments for assigned subjects. Define assignment title, description, deadline, maximum marks, attempt limits, and question file attachments.
+- **Submission Evaluation & Grading**: Review student solution text and uploaded attachments (images or PDFs) using an interactive preview modal. Assign scores ($0 \le \text{Marks} \le \text{MaxMarks}$) and construct written feedback.
+- **Course Marksheet Matrix & Exporting**: View dynamic grade marksheets displaying student ID, student name, assignment scores, total marks, and average percentages. Export marksheets to CSV (Excel) or format for official PDF printing.
+- **Retake Request Approval Hub**: Review, approve, or reject backlog/retake course applications submitted by students from higher semesters.
+
+### 3. Student Role
+- **Primary & Retake Course Dashboard**: Access core subjects belonging to the assigned primary semester class alongside approved backlog retake subjects.
+- **Assignment Solution Submission**: View active assignments and deadlines. Submit written solutions and file attachments (images or PDFs) up to the allowed maximum attempts.
+- **Resubmission & Attempt Control**: Update or overwrite previous submissions before the deadline. Attempt counters automatically track remaining submission allowances.
+- **Performance & Grade Monitoring**: View submission status, marks awarded, and faculty feedback across semesters.
+
+---
+
+## System Architecture and Technology Stack
+
+### Frontend
+- **Framework**: Next.js 14 (App Router architecture with React and TypeScript)
+- **Styling**: Vanilla CSS with custom design tokens (Clean, responsive human-interface design system)
+- **HTTP Client**: Native Fetch API with central token handling in `src/lib/api.ts`
+
+### Backend
+- **Framework**: ASP.NET Core 9 Web API (.NET 9 Runtime)
+- **Data Access**: Entity Framework Core 9 Code-First with Npgsql PostgreSQL Provider
+- **Authentication**: JWT (JSON Web Token) authentication with HS256 signing and BCrypt password hashing
+- **Error Handling**: Custom `ExceptionHandlingMiddleware` mapping domain exceptions to RFC 7807 problem details
+
+### Database
+- **Engine**: PostgreSQL Relational Database
+- **Migration & Initialization**: Automated schema migration via `EnsureCreatedAsync()` on application startup alongside optional standalone `database_schema.sql` script.
+
+### Automated Testing
+- **Framework**: xUnit with FluentAssertions and EF Core In-Memory Database provider.
+
+---
+
+## Repository Structure
+
+```
+assignment-management-system/
+├── backend/
+│   ├── AssignmentSystem.Api/         # ASP.NET Core 9 Web API Project
+│   │   ├── Controllers/              # Auth, Assignments, Submissions, Classes, Subjects, Users, Enrollments
+│   │   ├── Data/                     # AppDbContext and DbInitializer
+│   │   ├── Dtos/                     # Request and Response Data Transfer Objects
+│   │   ├── Entities/                 # Domain Entities (User, Class, Subject, Assignment, Submission, etc.)
+│   │   ├── Enums/                    # UserRole, AssignmentStatus, SubmissionStatus
+│   │   ├── Exceptions/               # Custom Domain Exceptions
+│   │   ├── Middleware/               # Global Exception Handling Middleware
+│   │   ├── Services/                 # Business Logic Services and Interfaces
+│   │   ├── database_schema.sql       # Standalone PostgreSQL SQL Initialization Script
+│   │   ├── Program.cs                # Application Entrypoint and Pipeline Configuration
+│   │   └── Dockerfile                # Multi-stage Containerization File
+│   └── Tests/                        # Unit Test Project
+│       ├── Authorization/            # Role Authorization Tests
+│       ├── BusinessRules/            # Marks, Deadline, Attempt Limit, and Policy Tests
+│       └── TestHelpers/              # DbContext Mocks
+├── frontend/                         # Next.js 14 Web Application
+│   ├── src/
+│   │   ├── app/                      # Next.js App Router Pages and Dashboards
+│   │   ├── components/               # Modal, StatusBadge, Navigation, and Layout Components
+│   │   ├── context/                  # AuthContext Provider
+│   │   ├── lib/                      # API Client and TypeScript Interfaces
+│   ├── .env.example                  # Environment Variables Template
+│   └── package.json                  # Dependencies and Scripts
+├── DOCUMENTATION.md                  # System Technical Documentation
+└── README.md                         # Project Master Documentation
+```
+
+---
+
+## Environment Configuration
+
+### Frontend Environment (`frontend/.env.example`)
+Create a `.env.local` file inside the `frontend/` directory:
+```env
+NEXT_PUBLIC_API_URL=http://localhost:5000/api
+```
+
+### Backend Configuration (`backend/AssignmentSystem.Api/appsettings.json`)
+The API dynamically reads database connection parameters from environment variables or local appsettings:
+```json
+{
+  "ConnectionStrings": {
+    "DefaultConnection": "Host=localhost;Database=assignment_db;Username=postgres;Password=postgres"
+  },
+  "Jwt": {
+    "Secret": "YourSuperSecretKeyWithMinimumLength32Chars!",
+    "Issuer": "AssignmentSystemApi",
+    "Audience": "AssignmentSystemClients"
+  }
+}
+```
+
+---
+
+## Local Development Setup
+
+### Prerequisites
+- .NET 9.0 SDK
+- Node.js (v18.0.0 or higher) and npm
+- PostgreSQL Server running on `localhost:5432` (or Docker PostgreSQL container)
+
+### Step 1: Database Setup
+Create a local PostgreSQL database named `assignment_db`. You can either:
+- Allow EF Core to automatically create tables on first run via `DbInitializer.cs`.
+- Or execute the provided `backend/AssignmentSystem.Api/database_schema.sql` script in pgAdmin or psql.
+
+### Step 2: Run Backend REST API (.NET 9)
 ```bash
 cd backend/AssignmentSystem.Api
 dotnet restore
 dotnet run
 ```
-*API running at `http://localhost:5000/api`*
+The REST API will start listening on `http://localhost:5000`. OpenAPI Swagger documentation is available at `http://localhost:5000/swagger`.
 
-### 2. Frontend Setup (Next.js)
+### Step 3: Run Frontend Web Application (Next.js 14)
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-*Web App running at `http://localhost:3000`*
+The web application will start listening on `http://localhost:3000`.
 
 ---
 
-## 🔐 Default Seeded Test Credentials
+## Automated Unit Testing
 
-*(All accounts share the password: `12345`)*
+The repository contains a unit test suite covering critical business rules, authorization boundaries, and data policies.
 
-### 👑 Admin
-- **Email**: `admin@cse.gstu.edu.bd` | **Password**: `12345`
+### Run Unit Tests
+```bash
+cd backend/Tests
+dotnet test
+```
 
-### 👨‍🏫 Teachers
-- **Dr Mrinal Kanti Bawali**: `mrinal@gmail.com` | **Password**: `12345`
-- **Dr Saleh Ahmed**: `saleh@gmail.com` | **Password**: `12345`
-- **Md Ferdous**: `ferdous@gmail.com` | **Password**: `12345`
-- **Md Abdullah**: `abdullah@gmail.com` | **Password**: `12345`
-
-### 👨‍🎓 Sample Students (2 Per Semester)
-- **CSE 1st Year 1st Sem**: `student10@cse.gstu.edu.bd` (`24CSE001`) / `student11@cse.gstu.edu.bd` (`24CSE002`) | **Password**: `12345`
-- **CSE 1st Year 2nd Sem**: `student8@cse.gstu.edu.bd` (`23CSE001`) / `student9@cse.gstu.edu.bd` (`23CSE002`) | **Password**: `12345`
-- **CSE 2nd Year 1st Sem**: `student6@cse.gstu.edu.bd` (`22CSE001`) / `student7@cse.gstu.edu.bd` (`22CSE002`) | **Password**: `12345`
-- **CSE 2nd Year 2nd Sem**: `student12@cse.gstu.edu.bd` (`22CSE003`) / `student13@cse.gstu.edu.bd` (`22CSE004`) | **Password**: `12345`
-- **CSE 3rd Year 1st Sem**: `student2@cse.gstu.edu.bd` (`21CSE036`) / `student3@cse.gstu.edu.bd` (`21CSE011`) | **Password**: `12345`
-- **CSE 3rd Year 2nd Sem**: `student4@cse.gstu.edu.bd` (`21CSE001`) / `student14@cse.gstu.edu.bd` (`21CSE005`) | **Password**: `12345`
-- **CSE 4th Year 1st Sem**: `student@cse.gstu.edu.bd` (`20CSE016`) / `student15@cse.gstu.edu.bd` (`20CSE020`) | **Password**: `12345`
-- **CSE 4th Year 2nd Sem**: `student16@cse.gstu.edu.bd` (`20CSE025`) / `student17@cse.gstu.edu.bd` (`20CSE030`) | **Password**: `12345`
+### Test Suite Summary (10/10 Tests Passing)
+1. `MarksValidationTests`: Verifies that awarded marks cannot exceed `MaxMarks` or be negative.
+2. `DeadlineEnforcementTests`: Verifies student submission locks post-deadline.
+3. `SubmissionAttemptLimitTests`: Validates submission attempt capping.
+4. `LowerSemesterRetakePolicyTests`: Verifies that retake applications are restricted to lower semester courses.
+5. `OneCourseOneTeacherPolicyTests`: Enforces that assigning a new teacher replaces previous allocations for a course.
+6. `RoleAuthorizationTests`: Verifies role-based access restrictions.
+7. `StudentClassAssignmentTests`: Validates automatic enrollment purging upon student semester transfer.
 
 ---
 
-## ⚠️ Assumptions & Architectural Trade-offs
+## Seed Test Credentials
 
-### 💾 Base64 Data URL File Storage Strategy
-- **Context & Rationale**: Free-tier cloud container hosting platforms (such as Render) operate on an **ephemeral filesystem**, where local container disk storage (`/uploads/`) is wiped upon container redeployment, restart, or scaling.
-- **Architectural Choice**: To guarantee 100% data persistence without requiring external paid cloud object storage subscriptions (e.g., AWS S3, Google Cloud Storage), uploaded question attachments and student submission files are encoded into **Base64 Data URLs** (`data:image/png;base64,...` / `data:application/pdf;base64,...`) and stored directly within PostgreSQL database string columns.
-- **Known Limitations & Mitigations**:
-  - Base64 encoding increases binary file payload size by approximately ~33%.
-  - Storing large binary payloads directly in relational database rows can increase database table size and impact query payload sizes.
-  - **Mitigation**: To prevent database bloat, a strict **5MB file size limit** is programmatically enforced in `FileUploadController.cs`.
-  - **Production Recommendation**: For production enterprise deployments, storing binary assets in dedicated Object Storage (AWS S3) while storing public CDN URLs in the relational database remains the industry best practice. Base64 DB storage was chosen as a deliberate, practical, self-contained trade-off for zero-dependency project execution.
+The system seeds demo accounts for testing all three user roles. All seeded accounts use the password: `12345`.
+
+### 1. Administrator Account
+- **Email**: `admin@cse.gstu.edu.bd`
+- **Password**: `12345`
+
+### 2. Faculty Teacher Accounts
+- **Dr Mrinal Kanti Bawali**: `mrinal@gmail.com` | Password: `12345`
+- **Dr Saleh Ahmed**: `saleh@gmail.com` | Password: `12345`
+- **Md Ferdous**: `ferdous@gmail.com` | Password: `12345`
+- **Md Abdullah**: `abdullah@gmail.com` | Password: `12345`
+
+### 3. Sample Student Accounts (2 Per Semester)
+- **CSE 1st Year 1st Sem**: `student10@cse.gstu.edu.bd` (`24CSE001`) / `student11@cse.gstu.edu.bd` (`24CSE002`) | Password: `12345`
+- **CSE 1st Year 2nd Sem**: `student8@cse.gstu.edu.bd` (`23CSE001`) / `student9@cse.gstu.edu.bd` (`23CSE002`) | Password: `12345`
+- **CSE 2nd Year 1st Sem**: `student6@cse.gstu.edu.bd` (`22CSE001`) / `student7@cse.gstu.edu.bd` (`22CSE002`) | Password: `12345`
+- **CSE 2nd Year 2nd Sem**: `student12@cse.gstu.edu.bd` (`22CSE003`) / `student13@cse.gstu.edu.bd` (`22CSE004`) | Password: `12345`
+- **CSE 3rd Year 1st Sem**: `student2@cse.gstu.edu.bd` (`21CSE036`) / `student3@cse.gstu.edu.bd` (`21CSE011`) | Password: `12345`
+- **CSE 3rd Year 2nd Sem**: `student4@cse.gstu.edu.bd` (`21CSE001`) / `student14@cse.gstu.edu.bd` (`21CSE005`) | Password: `12345`
+- **CSE 4th Year 1st Sem**: `student@cse.gstu.edu.bd` (`20CSE016`) / `student15@cse.gstu.edu.bd` (`20CSE020`) | Password: `12345`
+- **CSE 4th Year 2nd Sem**: `student16@cse.gstu.edu.bd` (`20CSE025`) / `student17@cse.gstu.edu.bd` (`20CSE030`) | Password: `12345`
+
+---
+
+## Assumptions and Architectural Trade-offs
+
+### Base64 Data URL File Storage Strategy
+
+#### Context and Rationale
+Cloud container hosting platforms operating under free-tier infrastructure (such as Render) utilize an **ephemeral container filesystem**. Any files written directly to local disk paths (`/uploads/`) are erased whenever the container restarts, scales, or redeploys.
+
+#### Architectural Decision
+To ensure data persistence without introducing paid external cloud object storage dependencies (such as AWS S3 or Google Cloud Storage), uploaded student ID cards, question papers, and submission attachments are encoded into **Base64 Data URLs** (`data:image/png;base64,...` / `data:application/pdf;base64,...`) and stored directly inside PostgreSQL database text columns.
+
+#### Trade-offs and Mitigations
+- **Trade-off**: Base64 encoding increases raw binary payload sizes by approximately 33%. Storing binary strings directly inside database rows increases database size and query payload volume.
+- **Mitigation**: A strict **5MB file size limit** is programmatically enforced in `FileUploadController.cs` to prevent database bloat.
+- **Production Recommendation**: In enterprise production environments, storing binary files in dedicated Object Storage (AWS S3) while maintaining reference URLs in the database remains the standard architecture. Base64 database persistence was selected as a practical, self-contained trade-off for zero-dependency deployment and local setup.
