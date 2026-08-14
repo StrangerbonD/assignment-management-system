@@ -78,6 +78,46 @@ export default function AdminDashboard() {
     }
   };
 
+  const getFormattedUrl = (url?: string | null) => {
+    if (!url) return '';
+    if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return `http://localhost:5000${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  const handleOpenDocument = (url?: string | null) => {
+    if (!url) return;
+    const targetUrl = getFormattedUrl(url);
+
+    if (targetUrl.startsWith('data:')) {
+      try {
+        const parts = targetUrl.split(';base64,');
+        const contentType = parts[0].replace('data:', '');
+        const byteCharacters = atob(parts[1]);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: contentType });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+      } catch (e) {
+        const win = window.open('');
+        if (win) {
+          if (targetUrl.includes('image')) {
+            win.document.write(`<img src="${targetUrl}" style="max-width:100%" />`);
+          } else {
+            win.document.write(`<iframe src="${targetUrl}" style="width:100%;height:100vh;border:none"></iframe>`);
+          }
+        }
+      }
+    } else {
+      window.open(targetUrl, '_blank');
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, []);
@@ -991,7 +1031,7 @@ export default function AdminDashboard() {
         <Modal isOpen={!!previewIdCardUrl} onClose={() => setPreviewIdCardUrl(null)} title={`Student ID Card Proof — ${previewStudentName}`}>
           <div style={{ textAlign: 'center', padding: '1rem' }}>
             {previewIdCardUrl && (
-              previewIdCardUrl.toLowerCase().endsWith('.pdf') ? (
+              (previewIdCardUrl.includes('application/pdf') || previewIdCardUrl.toLowerCase().endsWith('.pdf')) ? (
                 <div style={{ background: '#f8fafc', border: '2px dashed #cbd5e1', borderRadius: '12px', padding: '2rem 1.5rem', marginBottom: '1rem' }}>
                   <div style={{ fontSize: '3.5rem', marginBottom: '0.75rem' }}>📄</div>
                   <h4 style={{ fontSize: '1.1rem', fontWeight: 800, color: '#0f172a', marginBottom: '0.5rem' }}>
@@ -1001,7 +1041,7 @@ export default function AdminDashboard() {
                     Uploaded PDF document proof of identity for <strong>{previewStudentName}</strong>.
                   </p>
                   <object
-                    data={previewIdCardUrl.startsWith('http') ? previewIdCardUrl : `http://localhost:5000${previewIdCardUrl.startsWith('/') ? '' : '/'}${previewIdCardUrl}`}
+                    data={getFormattedUrl(previewIdCardUrl)}
                     type="application/pdf"
                     style={{ width: '100%', height: '350px', borderRadius: '8px', border: '1px solid #cbd5e1' }}
                   >
@@ -1011,7 +1051,7 @@ export default function AdminDashboard() {
               ) : (
                 <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', background: '#0f172a', padding: '0.5rem', borderRadius: '8px' }}>
                   <img
-                    src={previewIdCardUrl.startsWith('http') ? previewIdCardUrl : `http://localhost:5000${previewIdCardUrl.startsWith('/') ? '' : '/'}${previewIdCardUrl}`}
+                    src={getFormattedUrl(previewIdCardUrl)}
                     alt="Student ID Card"
                     style={{ maxWidth: '100%', maxHeight: '450px', borderRadius: '6px', objectFit: 'contain' }}
                   />
@@ -1019,15 +1059,14 @@ export default function AdminDashboard() {
               )
             )}
             <div style={{ marginTop: '1.25rem' }}>
-              <a
-                href={previewIdCardUrl?.startsWith('http') ? previewIdCardUrl : `http://localhost:5000${previewIdCardUrl?.startsWith('/') ? '' : '/'}${previewIdCardUrl}`}
-                target="_blank"
-                rel="noreferrer"
+              <button
+                type="button"
+                onClick={() => handleOpenDocument(previewIdCardUrl)}
                 className="btn btn-primary"
                 style={{ width: '100%', padding: '0.75rem' }}
               >
                 🔍 Open Full High-Res Document in New Tab
-              </a>
+              </button>
             </div>
           </div>
         </Modal>
@@ -1232,28 +1271,28 @@ export default function AdminDashboard() {
                     Attached Submitted File:
                   </label>
                   <div style={{ padding: '1rem', background: '#e6f4ed', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
-                    {viewingAnswerSubmission.fileUrl.match(/\.(jpeg|jpg|gif|png|webp)($|\?)/i) ? (
+                    {(viewingAnswerSubmission.fileUrl.startsWith('data:image/') || viewingAnswerSubmission.fileUrl.match(/\.(jpeg|jpg|gif|png|webp)($|\?)/i)) ? (
                       <div>
                         <div style={{ marginBottom: '0.75rem' }}>
-                          <img src={viewingAnswerSubmission.fileUrl} alt="Submission Attachment" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                          <img src={getFormattedUrl(viewingAnswerSubmission.fileUrl)} alt="Submission Attachment" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
                         </div>
-                        <a href={viewingAnswerSubmission.fileUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm">
+                        <button type="button" onClick={() => handleOpenDocument(viewingAnswerSubmission.fileUrl)} className="btn btn-primary btn-sm">
                           Open Original Image File
-                        </a>
+                        </button>
                       </div>
-                    ) : viewingAnswerSubmission.fileUrl.match(/\.pdf($|\?)/i) ? (
+                    ) : (viewingAnswerSubmission.fileUrl.includes('application/pdf') || viewingAnswerSubmission.fileUrl.match(/\.pdf($|\?)/i)) ? (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                         <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#166534' }}>📄 PDF Document Attachment</span>
-                        <a href={viewingAnswerSubmission.fileUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm">
+                        <button type="button" onClick={() => handleOpenDocument(viewingAnswerSubmission.fileUrl)} className="btn btn-primary btn-sm">
                           View PDF Document
-                        </a>
+                        </button>
                       </div>
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                         <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#166534' }}>📎 File Attachment</span>
-                        <a href={viewingAnswerSubmission.fileUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm">
+                        <button type="button" onClick={() => handleOpenDocument(viewingAnswerSubmission.fileUrl)} className="btn btn-primary btn-sm">
                           Open File Attachment
-                        </a>
+                        </button>
                       </div>
                     )}
                   </div>

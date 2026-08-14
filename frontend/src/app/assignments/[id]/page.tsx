@@ -128,6 +128,46 @@ export default function AssignmentDetailPage() {
     return url.startsWith('data:application/pdf') || /\.pdf(\?.*)?$/i.test(url);
   };
 
+  const getFormattedUrl = (url?: string | null) => {
+    if (!url) return '';
+    if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return `http://localhost:5000${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  const handleOpenDocument = (url?: string | null) => {
+    if (!url) return;
+    const targetUrl = getFormattedUrl(url);
+
+    if (targetUrl.startsWith('data:')) {
+      try {
+        const parts = targetUrl.split(';base64,');
+        const contentType = parts[0].replace('data:', '');
+        const byteCharacters = atob(parts[1]);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: contentType });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+      } catch (e) {
+        const win = window.open('');
+        if (win) {
+          if (targetUrl.includes('image')) {
+            win.document.write(`<img src="${targetUrl}" style="max-width:100%" />`);
+          } else {
+            win.document.write(`<iframe src="${targetUrl}" style="width:100%;height:100vh;border:none"></iframe>`);
+          }
+        }
+      }
+    } else {
+      window.open(targetUrl, '_blank');
+    }
+  };
+
   if (loading) {
     return <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--text-muted)' }}>Loading assignment details...</div>;
   }
@@ -182,30 +222,30 @@ export default function AssignmentDetailPage() {
             {isImageFile(assignment.attachmentUrl) ? (
               <div>
                 <img
-                  src={assignment.attachmentUrl}
+                  src={getFormattedUrl(assignment.attachmentUrl)}
                   alt="Question Attachment"
                   style={{ maxWidth: '100%', maxHeight: '400px', borderRadius: '6px', border: '1px solid #cbd5e1', marginBottom: '0.5rem' }}
                 />
                 <div>
-                  <a href={assignment.attachmentUrl} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">
+                  <button type="button" onClick={() => handleOpenDocument(assignment.attachmentUrl)} className="btn btn-secondary btn-sm">
                     View Full Question Image
-                  </a>
+                  </button>
                 </div>
               </div>
             ) : isPdfFile(assignment.attachmentUrl) ? (
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div>
                   <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>Question Paper PDF Document</div>
-                  <a href={assignment.attachmentUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm" style={{ marginTop: '0.3rem' }}>
+                  <button type="button" onClick={() => handleOpenDocument(assignment.attachmentUrl)} className="btn btn-primary btn-sm" style={{ marginTop: '0.3rem' }}>
                     Open / Download Question PDF
-                  </a>
+                  </button>
                 </div>
               </div>
             ) : (
               <div style={{ overflowWrap: 'anywhere' }}>
-                <a href={assignment.attachmentUrl} target="_blank" rel="noreferrer" className="btn btn-secondary btn-sm">
-                  Open Question File ({assignment.attachmentUrl.length > 40 ? assignment.attachmentUrl.substring(0, 40) + '...' : assignment.attachmentUrl})
-                </a>
+                <button type="button" onClick={() => handleOpenDocument(assignment.attachmentUrl)} className="btn btn-secondary btn-sm">
+                  Open Question File Attachment
+                </button>
               </div>
             )}
           </div>
@@ -552,25 +592,25 @@ export default function AssignmentDetailPage() {
                       {isImageFile(viewingAnswerSubmission.fileUrl) ? (
                         <div>
                           <div style={{ marginBottom: '0.75rem' }}>
-                            <img src={viewingAnswerSubmission.fileUrl} alt="Submission Attachment" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                            <img src={getFormattedUrl(viewingAnswerSubmission.fileUrl)} alt="Submission Attachment" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
                           </div>
-                          <a href={viewingAnswerSubmission.fileUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm">
+                          <button type="button" onClick={() => handleOpenDocument(viewingAnswerSubmission.fileUrl)} className="btn btn-primary btn-sm">
                             Open Original Image File
-                          </a>
+                          </button>
                         </div>
                       ) : isPdfFile(viewingAnswerSubmission.fileUrl) ? (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                           <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#166534' }}>📄 PDF Document Attachment</span>
-                          <a href={viewingAnswerSubmission.fileUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm">
+                          <button type="button" onClick={() => handleOpenDocument(viewingAnswerSubmission.fileUrl)} className="btn btn-primary btn-sm">
                             View PDF Document
-                          </a>
+                          </button>
                         </div>
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                           <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#166534' }}>📎 File Attachment</span>
-                          <a href={viewingAnswerSubmission.fileUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm">
+                          <button type="button" onClick={() => handleOpenDocument(viewingAnswerSubmission.fileUrl)} className="btn btn-primary btn-sm">
                             Open File Attachment
-                          </a>
+                          </button>
                         </div>
                       )}
                     </div>

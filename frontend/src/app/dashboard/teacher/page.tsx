@@ -59,6 +59,46 @@ export default function TeacherDashboard() {
     }
   };
 
+  const getFormattedUrl = (url?: string | null) => {
+    if (!url) return '';
+    if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) {
+      return url;
+    }
+    return `http://localhost:5000${url.startsWith('/') ? '' : '/'}${url}`;
+  };
+
+  const handleOpenDocument = (url?: string | null) => {
+    if (!url) return;
+    const targetUrl = getFormattedUrl(url);
+
+    if (targetUrl.startsWith('data:')) {
+      try {
+        const parts = targetUrl.split(';base64,');
+        const contentType = parts[0].replace('data:', '');
+        const byteCharacters = atob(parts[1]);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: contentType });
+        const blobUrl = URL.createObjectURL(blob);
+        window.open(blobUrl, '_blank');
+      } catch (e) {
+        const win = window.open('');
+        if (win) {
+          if (targetUrl.includes('image')) {
+            win.document.write(`<img src="${targetUrl}" style="max-width:100%" />`);
+          } else {
+            win.document.write(`<iframe src="${targetUrl}" style="width:100%;height:100vh;border:none"></iframe>`);
+          }
+        }
+      }
+    } else {
+      window.open(targetUrl, '_blank');
+    }
+  };
+
   useEffect(() => {
     fetchData();
   }, [user]);
@@ -561,28 +601,28 @@ export default function TeacherDashboard() {
                     Attached Submitted File:
                   </label>
                   <div style={{ padding: '1rem', background: '#e6f4ed', borderRadius: '6px', border: '1px solid #bbf7d0' }}>
-                    {viewingAnswerSubmission.fileUrl.match(/\.(jpeg|jpg|gif|png|webp)($|\?)/i) ? (
+                    {(viewingAnswerSubmission.fileUrl.startsWith('data:image/') || viewingAnswerSubmission.fileUrl.match(/\.(jpeg|jpg|gif|png|webp)($|\?)/i)) ? (
                       <div>
                         <div style={{ marginBottom: '0.75rem' }}>
-                          <img src={viewingAnswerSubmission.fileUrl} alt="Submission Attachment" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
+                          <img src={getFormattedUrl(viewingAnswerSubmission.fileUrl)} alt="Submission Attachment" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '4px', border: '1px solid #cbd5e1' }} />
                         </div>
-                        <a href={viewingAnswerSubmission.fileUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm">
+                        <button type="button" onClick={() => handleOpenDocument(viewingAnswerSubmission.fileUrl)} className="btn btn-primary btn-sm">
                           Open Original Image File
-                        </a>
+                        </button>
                       </div>
-                    ) : viewingAnswerSubmission.fileUrl.match(/\.pdf($|\?)/i) ? (
+                    ) : (viewingAnswerSubmission.fileUrl.includes('application/pdf') || viewingAnswerSubmission.fileUrl.match(/\.pdf($|\?)/i)) ? (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                         <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#166534' }}>📄 PDF Document Attachment</span>
-                        <a href={viewingAnswerSubmission.fileUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm">
+                        <button type="button" onClick={() => handleOpenDocument(viewingAnswerSubmission.fileUrl)} className="btn btn-primary btn-sm">
                           View PDF Document
-                        </a>
+                        </button>
                       </div>
                     ) : (
                       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '0.5rem' }}>
                         <span style={{ fontWeight: 600, fontSize: '0.9rem', color: '#166534' }}>📎 File Attachment</span>
-                        <a href={viewingAnswerSubmission.fileUrl} target="_blank" rel="noreferrer" className="btn btn-primary btn-sm">
+                        <button type="button" onClick={() => handleOpenDocument(viewingAnswerSubmission.fileUrl)} className="btn btn-primary btn-sm">
                           Open File Attachment
-                        </a>
+                        </button>
                       </div>
                     )}
                   </div>
