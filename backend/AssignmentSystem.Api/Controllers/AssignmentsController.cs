@@ -1,6 +1,8 @@
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using AssignmentSystem.Api.Data;
 using AssignmentSystem.Api.Dtos;
 using AssignmentSystem.Api.Entities;
 using AssignmentSystem.Api.Enums;
@@ -14,10 +16,12 @@ namespace AssignmentSystem.Api.Controllers;
 public class AssignmentsController : ControllerBase
 {
     private readonly IAssignmentService _assignmentService;
+    private readonly AppDbContext _context;
 
-    public AssignmentsController(IAssignmentService assignmentService)
+    public AssignmentsController(IAssignmentService assignmentService, AppDbContext context)
     {
         _assignmentService = assignmentService;
+        _context = context;
     }
 
     /// <summary>
@@ -26,7 +30,7 @@ public class AssignmentsController : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<AssignmentDto>>> GetAssignments()
     {
-        var currentUser = GetCurrentUserFromClaims();
+        var currentUser = await GetCurrentUserAsync();
         var assignments = await _assignmentService.GetAssignmentsForUserAsync(currentUser);
         return Ok(assignments);
     }
@@ -37,7 +41,7 @@ public class AssignmentsController : ControllerBase
     [HttpGet("{id}")]
     public async Task<ActionResult<AssignmentDto>> GetAssignmentById(int id)
     {
-        var currentUser = GetCurrentUserFromClaims();
+        var currentUser = await GetCurrentUserAsync();
         var assignment = await _assignmentService.GetAssignmentByIdAsync(id, currentUser);
         return Ok(assignment);
     }
@@ -49,7 +53,7 @@ public class AssignmentsController : ControllerBase
     [Authorize(Roles = $"{nameof(UserRole.Teacher)},{nameof(UserRole.Admin)}")]
     public async Task<ActionResult<AssignmentDto>> CreateAssignment([FromBody] CreateAssignmentDto dto)
     {
-        var currentUser = GetCurrentUserFromClaims();
+        var currentUser = await GetCurrentUserAsync();
         var created = await _assignmentService.CreateAssignmentAsync(dto, currentUser.Id);
         return CreatedAtAction(nameof(GetAssignmentById), new { id = created.Id }, created);
     }
@@ -61,7 +65,7 @@ public class AssignmentsController : ControllerBase
     [Authorize(Roles = $"{nameof(UserRole.Teacher)},{nameof(UserRole.Admin)}")]
     public async Task<ActionResult<AssignmentDto>> UpdateAssignment(int id, [FromBody] UpdateAssignmentDto dto)
     {
-        var currentUser = GetCurrentUserFromClaims();
+        var currentUser = await GetCurrentUserAsync();
         var updated = await _assignmentService.UpdateAssignmentAsync(id, dto, currentUser.Id);
         return Ok(updated);
     }
@@ -73,17 +77,22 @@ public class AssignmentsController : ControllerBase
     [Authorize(Roles = $"{nameof(UserRole.Teacher)},{nameof(UserRole.Admin)}")]
     public async Task<IActionResult> DeleteAssignment(int id)
     {
-        var currentUser = GetCurrentUserFromClaims();
+        var currentUser = await GetCurrentUserAsync();
         await _assignmentService.DeleteAssignmentAsync(id, currentUser);
         return NoContent();
     }
 
-    private User GetCurrentUserFromClaims()
+    private async Task<User> GetCurrentUserAsync()
     {
         var idClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (int.TryParse(idClaim, out var userId))
+        {
+            var dbUser = await _context.Users.Include(u => u.Class).FirstOrDefaultAsync(u => u.Id == userId);
+            if (dbUser != null) return dbUser;
+        }
+
         var roleClaim = User.FindFirst(ClaimTypes.Role)?.Value;
         var classIdClaim = User.FindFirst("ClassId")?.Value;
-
         var id = int.TryParse(idClaim, out var parsedId) ? parsedId : 0;
         var role = Enum.TryParse<UserRole>(roleClaim, out var parsedRole) ? parsedRole : UserRole.Student;
         int? classId = int.TryParse(classIdClaim, out var parsedClassId) ? parsedClassId : null;

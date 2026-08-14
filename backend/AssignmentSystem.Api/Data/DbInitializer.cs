@@ -126,7 +126,7 @@ public static class DbInitializer
         // Seed CSE GSTU Accounts with Student IDs
         await EnsureUserExists("admin@cse.gstu.edu.bd", "CSE Department Head / Admin", UserRole.Admin, "Admin123!", null, null);
         await EnsureUserExists("teacher@cse.gstu.edu.bd", "Dr. Rahman (CSE Faculty)", UserRole.Teacher, "Teacher123!", null, null);
-        await EnsureUserExists("student@cse.gstu.edu.bd", "Bondhon Das", UserRole.Student, "Student123!", cseClass3.Id, "20CSE016");
+        await EnsureUserExists("student@cse.gstu.edu.bd", "Bondhon Das", UserRole.Student, "Student123!", cseClass4.Id, "20CSE016");
         await EnsureUserExists("student2@cse.gstu.edu.bd", "Iftekhar Siddiq Tanvir", UserRole.Student, "Student123!", cseClass3.Id, "20CSE036");
         await EnsureUserExists("student3@cse.gstu.edu.bd", "Masum Reza", UserRole.Student, "Student123!", cseClass3.Id, "20CSE011");
 
@@ -144,7 +144,7 @@ public static class DbInitializer
             );
         ");
 
-        await context.Database.ExecuteSqlRawAsync("UPDATE \"Users\" SET \"StudentId\" = '20CSE016', \"FullName\" = 'Bondhon Das', \"IsApproved\" = TRUE WHERE LOWER(\"Email\") = 'student@cse.gstu.edu.bd';");
+        await context.Database.ExecuteSqlRawAsync($"UPDATE \"Users\" SET \"ClassId\" = {cseClass4.Id}, \"StudentId\" = '20CSE016', \"FullName\" = 'Bondhon Das', \"IsApproved\" = TRUE WHERE LOWER(\"Email\") = 'student@cse.gstu.edu.bd';");
         await context.Database.ExecuteSqlRawAsync("UPDATE \"Users\" SET \"StudentId\" = '20CSE036', \"FullName\" = 'Iftekhar Siddiq Tanvir', \"IsApproved\" = TRUE WHERE LOWER(\"Email\") = 'student2@cse.gstu.edu.bd';");
         await context.Database.ExecuteSqlRawAsync("UPDATE \"Users\" SET \"StudentId\" = '20CSE011', \"FullName\" = 'Masum Reza', \"IsApproved\" = TRUE WHERE LOWER(\"Email\") = 'student3@cse.gstu.edu.bd';");
 
