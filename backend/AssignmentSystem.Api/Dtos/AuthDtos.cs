@@ -12,7 +12,7 @@ public record RegisterStudentDto(
     [Required][MaxLength(50)] string StudentId,
     [Required][MaxLength(100)] string FullName,
     [Required][EmailAddress][MaxLength(150)] string Email,
-    [Required][MinLength(6)] string Password,
+    [Required][MinLength(4)] string Password,
     [Required] int ClassId,
     [Required(ErrorMessage = "Student ID Card photo proof is required.")] string IdCardUrl
 );

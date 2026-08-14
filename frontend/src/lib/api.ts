@@ -44,7 +44,19 @@ async function apiFetch<T>(endpoint: string, options: RequestInit = {}): Promise
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    const errorMessage = data?.message || `API Error: ${response.status} ${response.statusText}`;
+    let errorMessage = data?.message;
+    if (!errorMessage && data?.errors && typeof data.errors === 'object') {
+      const errorList = Object.entries(data.errors)
+        .map(([key, msgs]: [string, any]) => `${key}: ${Array.isArray(msgs) ? msgs.join(', ') : msgs}`)
+        .join(' | ');
+      if (errorList) errorMessage = errorList;
+    }
+    if (!errorMessage && data?.title) {
+      errorMessage = data.title;
+    }
+    if (!errorMessage) {
+      errorMessage = `API Error: ${response.status} ${response.statusText}`;
+    }
     throw new Error(errorMessage);
   }
 

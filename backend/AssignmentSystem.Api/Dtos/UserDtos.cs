@@ -8,7 +8,7 @@ public record CreateUserDto(
     string? IdCardUrl,
     [Required][MaxLength(100)] string FullName,
     [Required][EmailAddress][MaxLength(150)] string Email,
-    [Required][MinLength(6)] string Password,
+    [Required][MinLength(4)] string Password,
     [Required] UserRole Role,
     int? ClassId
 );
@@ -24,7 +24,7 @@ public record UpdateUserDto(
 );
 
 public record ResetPasswordDto(
-    [Required][MinLength(6)] string NewPassword
+    [Required][MinLength(4)] string NewPassword
 );
 
 public record UserDto(
