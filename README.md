@@ -8,6 +8,12 @@ The application is architected with a **Next.js 14 (TypeScript)** Single Page Ap
 
 ---
 
+## Source Code Repository
+
+- **GitHub Repository**: `https://github.com/StrangerbonD/assignment-management-system`
+
+---
+
 ## Main Features
 
 ### 1. Admin Role
@@ -50,13 +56,13 @@ assignment-management-system/
 │   │   ├── Dtos/                     # Request and Response Data Transfer Objects
 │   │   ├── Entities/                 # Domain Entities (User, Class, Subject, Assignment, Submission, etc.)
 │   │   ├── Enums/                    # UserRole, AssignmentStatus, SubmissionStatus
-│   │   ├── Exceptions/               # Custom Domain Exceptions
-│   │   ├── Middleware/               # Global Exception Handling Middleware
+│   │   ├── Exceptions/               # Custom Domain Exceptions (UnauthorizedException, BusinessRuleException, etc.)
+│   │   ├── Middleware/               # Global Exception Handling Middleware (HTTP 401/400/404/409 mapping)
 │   │   ├── Services/                 # Business Logic Services and Interfaces
 │   │   ├── database_schema.sql       # Standalone PostgreSQL SQL Initialization Script
 │   │   └── Program.cs                # Application Entrypoint and Pipeline Configuration
-│   └── Tests/                        # Unit Test Project (18 Automated xUnit Tests)
-│       ├── Authorization/            # Role Authorization Tests
+│   └── Tests/                        # Unit Test Project (19 Automated xUnit Tests)
+│       ├── Authorization/            # Role Authorization & HTTP 401 Invalid Login Tests
 │       ├── BusinessRules/            # Marks, Deadline, Attempt Limit, Retake, 1:1 Teacher, File Upload Limit Tests
 │       └── TestHelpers/              # DbContext Mocks
 ├── frontend/                         # Next.js 14 Web Application
@@ -67,7 +73,7 @@ assignment-management-system/
 │   │   ├── lib/                      # API Client and TypeScript Interfaces
 │   │   └── styles/                   # Design Tokens (globals.css)
 │   ├── .env.example                  # Environment Variables Template
-│   └── package.json                  # Dependencies and Scripts
+│   └── package.json                  # Dependencies and Scripts (dev, build, start, lint, test)
 └── README.md                         # Master Project Documentation
 ```
 
@@ -109,7 +115,7 @@ Database connection string and JWT signing secret settings:
 
 ### Database Setup Instructions
 The evaluator can set up the database without manually creating tables or collections. You can choose either method:
-1. **Automated Setup (Recommended)**: Create a local PostgreSQL database named `assignment_db`. Running `dotnet run` in the backend project automatically creates all tables and seeds 8 semesters, 16 courses, 4 teachers, 16 students, and 32 assignments via EF Core `DbInitializer.cs`.
+1. **Automated Setup (Recommended)**: Create a local PostgreSQL database named `assignment_db`. Running `dotnet run` in the backend project automatically creates all tables and seeds 8 semesters, 16 courses, 5 teacher accounts (4 primary faculty members + 1 backward-compatibility account), 16 students, and 32 assignments via EF Core `DbInitializer.cs`.
 2. **Database Script Setup**: Alternatively, execute the provided `backend/AssignmentSystem.Api/database_schema.sql` script in pgAdmin or psql to create the schema and insert seed data manually.
 
 ### Instructions for Running the Backend (API)
@@ -132,23 +138,26 @@ The web application starts on `http://localhost:3000`.
 
 ## Instructions for Running the Tests
 
-The repository includes 18 automated unit tests covering all core business rules, resource authorization, attempt capping, retake policies, and file upload limits.
+The repository includes 19 automated backend unit tests covering all core business rules, authentication HTTP 401 responses, resource authorization, attempt capping, retake policies, and file upload limits.
 
-### Run Automated Unit Tests
+### Run Backend Unit Tests (xUnit)
 ```bash
 cd backend/Tests
 dotnet test
 ```
 
-### Test Suite Execution Summary (18/18 Tests Passing)
+### Frontend Testing Note
+Frontend UI testing is handled manually through user interaction testing on the Next.js interfaces. Running `npm run test` inside the `frontend/` directory outputs a test verification note stating that core business rules are covered by the 19 backend xUnit test suites.
+
+### Test Suite Execution Summary (19/19 Tests Passing)
 - `MarksValidationTests` (3 tests): Validates $0 \le \text{Marks} \le \text{MaxMarks}$ and rejects negative marks.
 - `DeadlineEnforcementTests` (2 tests): Verifies solution creation and updates are locked post-deadline.
 - `SubmissionAttemptLimitTests` (1 test): Validates submission attempt capping when maximum attempts are reached.
-- `LowerSemesterRetakePolicyTests` (2 tests): Enforces that retake applications are allowed for lower-semester courses and denied for same/upper semester courses.
+- `LowerSemesterRetakePolicyTests` (2 tests): Verifies that retake applications are allowed for lower-semester courses and denied for same/upper semester courses.
 - `OneCourseOneTeacherPolicyTests` (1 test): Verifies allocating a new teacher replaces previous allocations for a subject.
 - `StudentClassAssignmentTests` (1 test): Validates automatic enrollment purging when a student transfers primary semester classes.
-- `FileUploadLimitTests` (2 tests): Enforces the 5MB file upload limit and permits valid files.
-- `RoleAuthorizationTests` (2 tests): Validates draft assignment access restrictions.
+- `FileUploadLimitTests` (2 tests): Enforces 5MB file upload limit and permits valid files.
+- `RoleAuthorizationTests` (3 tests): Validates draft assignment access restrictions, published filtering, and verifies that invalid credentials return HTTP 401 Unauthorized via `UnauthorizedException`.
 - `StudentClassAuthorizationTests` (2 tests): Validates cross-class submission blocking.
 - `TeacherSubjectAuthorizationTests` (2 tests): Validates unassigned teacher evaluation blocking.
 
@@ -156,18 +165,34 @@ dotnet test
 
 ## Demo Credentials
 
-Working login credentials for testing all three user roles (all seeded accounts share the same password):
+Working login credentials for testing all three user roles (all seeded accounts share the same password `12345`):
 
-- **Admin**: Email: `admin@cse.gstu.edu.bd` | Password: `12345`
-- **Teacher**: Email: `mrinal@gmail.com` | Password: `12345` *(Also: `saleh@gmail.com`, `ferdous@gmail.com`, `abdullah@gmail.com`)*
-- **Student**: Email: `student@cse.gstu.edu.bd` | Password: `12345` *(Also: `student10@cse.gstu.edu.bd`, `student2@cse.gstu.edu.bd`)*
+### 1. Administrator Account
+- **Email**: `admin@cse.gstu.edu.bd` | **Password**: `12345`
+
+### 2. Faculty Teacher Accounts (5 Accounts)
+- **Dr Mrinal Kanti Bawali**: `mrinal@gmail.com` | **Password**: `12345`
+- **Dr Saleh Ahmed**: `saleh@gmail.com` | **Password**: `12345`
+- **Md Ferdous**: `ferdous@gmail.com` | **Password**: `12345`
+- **Md Abdullah**: `abdullah@gmail.com` | **Password**: `12345`
+- **Dr. Rahman (Compatibility Account)**: `teacher@cse.gstu.edu.bd` | **Password**: `12345`
+
+### 3. Sample Student Accounts (16 Accounts Across 8 Semesters)
+- **CSE 1st Year 1st Sem**: `student10@cse.gstu.edu.bd` (`24CSE001`) / `student11@cse.gstu.edu.bd` (`24CSE002`) | **Password**: `12345`
+- **CSE 1st Year 2nd Sem**: `student8@cse.gstu.edu.bd` (`23CSE001`) / `student9@cse.gstu.edu.bd` (`23CSE002`) | **Password**: `12345`
+- **CSE 2nd Year 1st Sem**: `student6@cse.gstu.edu.bd` (`22CSE001`) / `student7@cse.gstu.edu.bd` (`22CSE002`) | **Password**: `12345`
+- **CSE 2nd Year 2nd Sem**: `student12@cse.gstu.edu.bd` (`22CSE003`) / `student13@cse.gstu.edu.bd` (`22CSE004`) | **Password**: `12345`
+- **CSE 3rd Year 1st Sem**: `student2@cse.gstu.edu.bd` (`21CSE036`) / `student3@cse.gstu.edu.bd` (`21CSE011`) | **Password**: `12345`
+- **CSE 3rd Year 2nd Sem**: `student4@cse.gstu.edu.bd` (`21CSE001`) / `student14@cse.gstu.edu.bd` (`21CSE005`) | **Password**: `12345`
+- **CSE 4th Year 1st Sem**: `student@cse.gstu.edu.bd` (`20CSE016`) / `student15@cse.gstu.edu.bd` (`20CSE020`) | **Password**: `12345`
+- **CSE 4th Year 2nd Sem**: `student16@cse.gstu.edu.bd` (`20CSE025`) / `student17@cse.gstu.edu.bd` (`20CSE030`) | **Password**: `12345`
 
 ---
 
 ## Assumptions and Known Limitations
 
 ### Base64 Data URL File Storage Strategy
-- **Context & Rationale**: Free-tier cloud container platforms operate on stateless ephemeral filesystems where disk uploads are erased upon container restarts.
+- **Context & Rationale**: Stateless hosting containers utilize an **ephemeral container filesystem**, where local disk uploads are erased upon container restarts.
 - **Architectural Decision**: To ensure data persistence without requiring external paid cloud object storage dependencies (such as AWS S3), uploaded student ID cards, question papers, and submission attachments are encoded into **Base64 Data URLs** (`data:image/png;base64,...` / `data:application/pdf;base64,...`) and stored directly inside PostgreSQL database string columns.
 - **Known Limitations & Mitigations**:
   - Base64 encoding increases binary file payload size by approximately ~33%.

@@ -29,7 +29,7 @@ public class AuthService : IAuthService
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
         {
-            throw new BusinessRuleException("Invalid email or password.");
+            throw new UnauthorizedException("Invalid email or password.");
         }
 
         if (!user.IsApproved)

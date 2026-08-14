@@ -35,6 +35,10 @@ public class ExceptionHandlingMiddleware
 
         switch (exception)
         {
+            case UnauthorizedException ue:
+                statusCode = HttpStatusCode.Unauthorized;
+                message = ue.Message;
+                break;
             case BusinessRuleException bre:
                 statusCode = HttpStatusCode.BadRequest;
                 message = bre.Message;

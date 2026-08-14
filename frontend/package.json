@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test": "echo \"Frontend UI testing is manual; all core business rules are verified via backend xUnit test suite.\""
   },
   "dependencies": {
     "next": "^14.2.15",

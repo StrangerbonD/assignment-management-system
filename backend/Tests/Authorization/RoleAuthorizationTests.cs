@@ -1,5 +1,6 @@
 using FluentAssertions;
 using Xunit;
+using AssignmentSystem.Api.Dtos;
 using AssignmentSystem.Api.Entities;
 using AssignmentSystem.Api.Enums;
 using AssignmentSystem.Api.Exceptions;
@@ -99,5 +100,24 @@ public class RoleAuthorizationTests
         result.Should().HaveCount(1);
         result.First().Id.Should().Be(publishedAssignment.Id);
         result.First().Title.Should().Be("Published Assignment");
+    }
+
+    [Fact]
+    public async Task LoginAsync_ShouldThrowUnauthorizedException_WhenCredentialsAreInvalid()
+    {
+        // Arrange
+        using var context = DbContextMock.CreateInMemoryDbContext(nameof(LoginAsync_ShouldThrowUnauthorizedException_WhenCredentialsAreInvalid));
+
+        var configurationMock = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
+        var authService = new AuthService(context, configurationMock);
+
+        var loginDto = new LoginRequestDto("nonexistent@gstu.edu.bd", "wrongpass");
+
+        // Act
+        Func<Task> act = async () => await authService.LoginAsync(loginDto);
+
+        // Assert
+        await act.Should().ThrowAsync<UnauthorizedException>()
+            .WithMessage("*Invalid email or password*");
     }
 }
