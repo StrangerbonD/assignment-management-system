@@ -38,7 +38,8 @@ public class FileUploadController : ControllerBase
             return BadRequest(new { message = "File size exceeds maximum limit of 10MB." });
         }
 
-        var uploadsFolder = Path.Combine(_environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot"), "uploads");
+        var webRoot = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+        var uploadsFolder = Path.Combine(webRoot, "uploads");
         if (!Directory.Exists(uploadsFolder))
         {
             Directory.CreateDirectory(uploadsFolder);
@@ -56,5 +57,34 @@ public class FileUploadController : ControllerBase
         var fileUrl = $"{baseUrl}/uploads/{uniqueFileName}";
 
         return Ok(new { url = fileUrl, fileName = file.FileName, fileType = extension });
+    }
+
+    [HttpGet("/uploads/{fileName}")]
+    [AllowAnonymous]
+    public IActionResult GetUploadedFile(string fileName)
+    {
+        var webRoot = _environment.WebRootPath ?? Path.Combine(Directory.GetCurrentDirectory(), "wwwroot");
+        var filePath = Path.Combine(webRoot, "uploads", fileName);
+
+        if (!System.IO.File.Exists(filePath))
+        {
+            var fallbackPath = Path.Combine(Directory.GetCurrentDirectory(), "uploads", fileName);
+            if (System.IO.File.Exists(fallbackPath))
+            {
+                filePath = fallbackPath;
+            }
+            else
+            {
+                return NotFound(new { message = "Uploaded file not found." });
+            }
+        }
+
+        var provider = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+        if (!provider.TryGetContentType(fileName, out var contentType))
+        {
+            contentType = "application/octet-stream";
+        }
+
+        return PhysicalFile(filePath, contentType);
     }
 }

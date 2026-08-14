@@ -158,7 +158,18 @@ app.UseSwaggerUI(c =>
     c.RoutePrefix = "swagger";
 });
 
-app.UseStaticFiles();
+var wwwrootDir = Path.Combine(builder.Environment.ContentRootPath, "wwwroot");
+var uploadsDir = Path.Combine(wwwrootDir, "uploads");
+if (!Directory.Exists(uploadsDir))
+{
+    Directory.CreateDirectory(uploadsDir);
+}
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(wwwrootDir),
+    RequestPath = ""
+});
 
 app.UseCors("AllowFrontend");
 
